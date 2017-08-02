@@ -1,0 +1,20 @@
+(define (cont-frac n d k)
+  (define (helper count)
+    (if (= count k)
+        (/ (n count) (d count))
+        (/ (n count)
+           (- (d count)
+              (helper (+ count 1))))))
+  (helper 1.0))
+
+(define (tan-cf x k)
+  (cont-frac (lambda (i)
+               (if (= i 1)
+                   x
+                   (* x x)))
+             (lambda (i) (- (* 2 i) 1))
+             k))
+
+(tan-cf 3.1415926 100)
+(tan-cf 0.0000001 100)
+(tan-cf (/ 3.1415926 4) 100)

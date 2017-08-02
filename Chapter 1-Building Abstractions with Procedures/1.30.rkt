@@ -1,0 +1,25 @@
+(define (coeff count)
+  (cond ((= count 0) 1)
+        ((even? count) 2)
+        (else 4)))
+
+(define (sum-sim term a next b)
+  (define (iter a result count)
+    (if (= a b)
+        (+ result (term a))
+        (iter (next a)
+              (+ result (* (coeff count) (term a)))
+              (+ count 1))))
+  (iter a 0 0))
+
+(define (integral-sim f a b n)
+  (define h (/ (- b a)
+               n)) 
+  (define (add-a a) (+ a h))
+  (* (/ h 3)
+     (sum-sim f a add-a b)))
+
+(define (cube x) (* x x x))
+
+(integral-sim cube 0 1 100)
+(integral-sim cube 0 1 1000)

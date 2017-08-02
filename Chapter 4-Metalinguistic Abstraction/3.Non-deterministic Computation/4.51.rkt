@@ -1,0 +1,15 @@
+(define (permanent? exp)
+  (tagged-list? exp 'permanent-set!))
+
+
+(define (analyze-permanent-set exp)
+  (let ((var (assignment-variable exp))
+        (vproc (analyze (assignment-value exp))))
+    (lambda (env succeed fail)
+      (vproc env
+             ;; success continuation
+             (lambda (val fail2)
+               (set-variable-value! var val env)
+               (succeed 'ok fail2))
+             ;; failure continuation
+             fail))))

@@ -1,0 +1,26 @@
+(define (cons? exp) (tagged-list? exp 'mcons))
+
+(define (cons-body exp) (cadr exp))
+
+(define (display-cons? exp)
+  (tagged-list? exp 'display-cons))
+
+(define (display-cons exps env)
+  (define (display-elts exps)
+    (let ((first (eval (list 'car exps) env))
+          (rest (eval (list 'cdr exps) env)))
+      (cond ((pair? first)
+             (begin (display-cons first env)
+                    (display " ")))
+            ((not (pair? rest)
+                  (begin (display first)
+                         (if (not (null? rest))
+                             (begin (display " . ")
+                                    (display rest))))))
+            (else
+             (begin (display first)
+                    (display " ")
+                    (display-elts rest env))))))
+  (begin (display "(")
+         (display-elts exps)
+         (display ")")))

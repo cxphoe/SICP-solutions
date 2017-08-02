@@ -1,0 +1,47 @@
+;;let: (let ((<var1> <exp1>) ... (<varn> <expn>))
+;;       <body>)
+(define (let? exp)
+  (tagged-list? exp 'let))
+
+(define (let-assigns exp) (cadr exp))
+
+(define (let-body exp) (cddr exp))
+
+(define (let->combination exp)
+  (define (separate assigns res)
+    (if (null? assigns)
+        res
+        (let ((vars (car res)) (exps (cadr res)) (first (car assigns)))
+          (separate (cdr assigns)
+                    (list (cons (car first) vars)
+                          (cons (cadr first) exps))))))
+  (let ((s (separate (let-assigns exp))))
+    (let ((vars (car s)) (exps (cadr s)))
+      (make-application (make-lambda vars
+                                     (let-body exp))
+                        exps))))
+
+(define (make-application proc parameters)
+  (cons proc parameters))
+
+(define (eval exp env)
+  (cond ((self-evaluating? exp) exp)
+        ((variable? exp) (lookup-variable-value exp env))
+        ((quoted? exp) (text-of-quotation exp))
+        ((assignment? exp) (eval-assignment exp env))
+        ((definition? exp) (eval-definition exp env))
+        ((if? exp) (eval-if exp env))
+        ((lambda? exp)
+         (make-procedure (lambda-parameters exp)
+                         (lambda-body exp)
+                         env))
+        ((let? exp)
+         (eval (let->combination exp) env))
+        ((begin? exp)
+         (eval-sequence (begin-actions exp) env))
+        ((cond? exp) (eval (cond->if exp) env))
+        ((application? exp)
+         (apply (eval (operator exp) env)
+                (list-of-values (operands exp) env)))
+        (else
+         (error "Unknown expression type -- EVAL" exp))))

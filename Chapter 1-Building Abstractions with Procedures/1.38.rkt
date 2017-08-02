@@ -1,0 +1,20 @@
+(define tolerance 0.0001)
+
+(define (cont-frac n d k)
+  (define (helper count)
+    (if (= count k)
+        (/ (n count) (d count))
+        (/ (n count)
+           (+ (d count)
+              (helper (+ count 1))))))
+  (helper 1.0))
+
+(define (logarithm k)
+  (+ 2 (cont-frac (lambda (i) 1)
+                  (lambda (i)
+                    (cond ((= i 2) 2)
+                          ((= (remainder i 3) 2) (* 2 (/ (+ i 1) 3)))
+                          (else 1)))
+                  k)))
+
+(logarithm 10)

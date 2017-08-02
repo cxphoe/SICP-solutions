@@ -1,0 +1,5 @@
+(rule (top-banana ?person)
+      (and (job ?person (?dapar . ?type))
+           (or (not (supervisor ?person ?person2))
+               (and (supervisor ?person ?person3)
+                    (not (job ?person3 (?dapar . ?type3)))))))

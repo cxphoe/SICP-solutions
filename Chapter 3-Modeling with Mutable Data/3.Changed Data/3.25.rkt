@@ -1,0 +1,140 @@
+(define (make-table)
+  (let ((local-table (list '*table*)))    
+    (define (lookup key-list)
+      (define (sub-lookup key-list table)
+        (cond ((null? key-list) false)
+              ((= 1 (length key-list))
+               (let ((record (assoc (car key-list) (cdr table))))
+                 (if record
+                     (cdr record)
+                     false)))
+              (else
+               (let ((subtable (assoc (car key-list) (cdr table))))
+                 (if subtable
+                     (sub-lookup (cdr key-list) subtable)
+                     false)))))
+      (sub-lookup key-list local-table))
+
+    (define (insert! key-list value)
+      (define (sub-insert key-list table)
+        (if (= 1 (length key-list))
+            (let ((record (assoc (car key-list) (cdr table))))
+              (if record
+                  (set-cdr! record value)
+                  (set-cdr! table (cons (create-new key-list)
+                                        (cdr table)))))
+            (let ((subtable (assoc (car key-list) (cdr table))))
+              (if subtable
+                  (sub-insert (cdr key-list) subtable)
+                  (set-cdr! table (cons (create-new key-list)
+                                        (cdr table)))))))
+      (define (create-new key-list)
+        (if (null? (cdr key-list))
+            (cons (car key-list)
+                  value)
+            (list (car key-list)
+                  (create-new (cdr key-list)))))
+      (if (null? key-list)
+          (error "need one key at least -- INSERT!" key-list)
+          (begin (sub-insert key-list local-table)
+                 'ok)))
+    
+    (define (dispatch m)
+      (cond ((eq? m 'lookup-proc) lookup)
+            ((eq? m 'insert-proc!) insert!)
+            (else (error "Unknown operation -- TABLE" m))))
+    dispatch))
+
+;(define operation (make-table))
+;(define get (operation 'lookup-proc))
+;(define put (operation 'insert-proc!))
+
+;(get '(make rational))
+;(put '(make rational) (lambda (n d) (list n d)))
+;(get '(make rational))
+;(display ((get '(make rational)) 1 4))
+
+(define (make-table-general)
+  (let ((local-table (list '*table*)))
+    (define (general-lookup op init seq)
+      ;;the result of this proc is depended on the op
+      ;;for lookup or insert!
+      (define (iter res key-list)
+        (if (null? key-list)
+            res
+            (iter (op (car key-list) res)
+                  (cdr key-list))))
+      (iter init seq))
+    
+    (define (lookup key-list)
+      (define (sub-lookup key records)
+        (if records
+            (let ((record (assoc key records)))
+              (if record
+                  (cdr record)
+                  false))
+            false))
+      (general-lookup sub-lookup (cdr local-table) key-list))
+
+    (define (insert! key-list value)
+      (define (sub-insert key table)
+        (let ((record (assoc key (cdr table))))
+          (or record
+              (let ((new-rear (cons (list key)
+                                    (cdr table))))
+                ;;create a new subtable and return it
+                (set-cdr! table new-rear)
+                (car new-rear)))))
+      (set-cdr! (general-lookup sub-insert local-table key-list)
+                value)
+      'ok)
+
+    (define (print) 
+      (define (indent tabs)
+        (if (> tabs 0)
+            (begin (display "    ")
+                   (indent (- tabs 1)))))
+  
+      (define (print-record rec level) 
+        (indent level) 
+        (display (car rec)) 
+        (display ": ") 
+        (if (list? rec) 
+            (begin (newline) 
+                   (print-table rec (+ 1 level))) 
+            (begin (display (cdr rec)) 
+                   (newline)))) 
+              
+      (define (print-table table level) 
+        (if (null? (cdr table)) 
+            (begin (display "-no entries-") 
+                   (newline)) 
+            (for-each (lambda (record) 
+                        (print-record record level)) 
+                      (cdr table)))) 
+  
+      (print-table local-table 0))
+    
+    (define (dispatch m)
+      (cond ((eq? m 'lookup-proc) lookup)
+            ((eq? m 'insert-proc!) insert!)
+            ((eq? m 'print) print)
+            (else (error "Unknown operation -- TABLE" m))))
+    dispatch))
+
+(define op-table (make-table-general))
+(define put (op-table 'insert-proc!))
+(define get (op-table 'lookup-proc))
+((op-table 'print))
+
+(put '(letters a) 97)
+(put '(letters b) 98)
+(put '(math +) 43)
+(put '(math -) 45)
+(put '(math *) 42)
+(put '(greek majiscule ^) 923)
+(put '(min) 42)
+(put '(max) 955)
+(get '(min))
+
+((op-table 'print))
