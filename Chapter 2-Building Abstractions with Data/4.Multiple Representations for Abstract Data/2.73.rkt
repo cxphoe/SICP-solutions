@@ -44,7 +44,7 @@
 (define (make-sum x y)
   ((get 'make 'sum) x y))
 
-(define (install-product-oackage)
+(define (install-product-package)
   ;;internal procedures
   (define (multiplier operands) (car operands))
   (define (multiplicand operands) (cadr operands))

@@ -4,12 +4,11 @@
       (gcd y (remainder x y))))
 
 (define (make-rat n d)
-  (if (< d 0)
-      (cons (- n) (- d))
-      (cond n d)))
-
-  (let ((g (gcd (abs n) (abs d))))
-    (pos-or-neg? (/ n g) (/ d g))))
+  (let ((g (gcd n d)))
+    (let ((n1 (/ n g)) (d1 (/ d g)))
+      (if (< d1 0)
+          (cons (- n1) (- d1))
+          (cons n1 d1)))))
 
 (define (print-rat x)
   (newline)

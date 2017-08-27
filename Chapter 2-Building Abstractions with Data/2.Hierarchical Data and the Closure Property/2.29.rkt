@@ -1,11 +1,11 @@
-;;构造函数
+;; constructor
 (define (make-mobile left right)
   (list left right))
 
 (define (make-branch length structure)
   (list length structure))
 
-;;选择函数
+;; selector
 (define (left-branch mobile)
   (car mobile))
 
@@ -17,6 +17,8 @@
 
 (define (branch-structure branch)
   (car (cdr branch)))
+
+;======================================;
 
 (define (branch-weight branch)
   (let ((stru (branch-structure branch)))

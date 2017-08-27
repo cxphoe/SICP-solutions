@@ -20,14 +20,14 @@
   ; create a sequence including the positions represented
   ; by column and row and ranked by the column
   (append rest-of-queens
-          (list (cons column new-row))))
+          (list (list column new-row))))
 
 (define (safe-row p1 p2)
-  (not (= (cdr p1) (cdr p2))))
+  (not (= (cadr p1) (cadr p2))))
 
 (define (safe-diag p1 p2)
   (not (= (abs (- (car p1) (car p2)))
-          (abs (- (cdr p1) (cdr p2))))))
+          (abs (- (cadr p1) (cadr p2))))))
 
 (define (safe? column positions)
   ; get the test object for further testing
@@ -50,10 +50,9 @@
   (helper positions))
 
 (define (display-queen q)
-  (if (null? q)
-      0
-      ((display (car q))
-       (newline)
-       (display-queen (cdr q)))))
+  (if (not (null? q))
+      (begin (display (car q))
+             (newline)
+             (display-queen (cdr q)))))
 
 (display-queen (queens 8))

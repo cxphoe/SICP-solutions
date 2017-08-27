@@ -1,5 +1,3 @@
-(define tolerance 0.0001)
-
 (define (cont-frac n d k)
   (define (helper count)
     (if (= count k)

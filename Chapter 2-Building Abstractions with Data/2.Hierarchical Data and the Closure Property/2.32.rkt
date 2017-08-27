@@ -4,8 +4,7 @@
   (if (null? s)
       (list nil)
       (let ((rest (subsets (cdr s))))
-        (append rest (map (lambda (ss) (cons (car s)
-                                             ss))
+        (append rest (map (lambda (ss) (cons (car s) ss))
                           rest)))))
 
-(subsets (list 1 2 3))
+(display (subsets (list 1 2 3)))

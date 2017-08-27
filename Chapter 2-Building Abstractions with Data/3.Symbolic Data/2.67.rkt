@@ -7,6 +7,8 @@
 (define (symbol-leaf x) (cadr x))
 (define (weight-leaf x) (caddr x))
 
+; make code tree based on the given frequencies
+; which are considered as weight in the tree
 (define (make-code-tree left right)
   (list left
         right

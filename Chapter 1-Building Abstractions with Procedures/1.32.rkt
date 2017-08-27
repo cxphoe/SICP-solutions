@@ -1,3 +1,4 @@
+; a)
 (define (accumulate combiner null-value term a next b)
   (if (> a b)
       null-value
@@ -9,6 +10,7 @@
                             next
                             b))))
 
+; b)
 (define (accumulate-iter combiner null-value term a next b)
   (if (> a b)
       null-value
@@ -20,13 +22,12 @@
                        b)))
 
 (define (sum term a next b)
-  (define (combiner x y) (+ x y))
-  (accumulate combiner 0 term a next b))
+  (accumulate + 0 term a next b))
 
 (define (product-iter term a next b)
-  (define (combiner x y) (* x y))
-  (accumulate combiner 1 term a next b))
+  (accumulate * 1 term a next b))
 
+; test
 (define (integral f a b n)
   (define h (/ (- b a) n))
   

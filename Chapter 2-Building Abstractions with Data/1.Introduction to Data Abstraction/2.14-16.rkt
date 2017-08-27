@@ -11,7 +11,11 @@
 ;;record of the elements' considered elements. If the considered
 ;;elements of the two elements in the operation are identical then
 ;;rules of operation need to be changed into "lower-bound against
-;;lower-bound, upper-bound against upper-bound", not the opposite.
+;;lower-bound, upper-bound against upper-bound", not interleave.
+
+;;But this method will only work with situations like AB/(A+B).
+;;It won't work with (A + C)/(A + B). It's more about math,
+;;so I don't wanna think about it, at least for now.
  
 (define (mix-div-interval x y)
   (let ((x-upper (upper-bound x))

@@ -1,6 +1,14 @@
 (load "2.2.rkt")
+; load expressions of point and segment
 
-;take in two segment as length and width of rectangle
+; take in two segment as length and width of rectangle
+; like:
+; +-----------------
+; |
+; |
+; |
+; |
+; |
 (define (make-rectangle length-seg width-seg)
   (cons length-seg width-seg))
 

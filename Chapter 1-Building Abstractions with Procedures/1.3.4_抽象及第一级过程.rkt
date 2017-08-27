@@ -17,6 +17,10 @@
 (define (average-damp f)
   (lambda (x) (/ (+ x (f x)) 2)))
 
+; newton method:
+;             g(x)
+; f(x) = x - ——————
+;             Dg(x)
 (define dx 0.00001)
 
 (define (deriv g)

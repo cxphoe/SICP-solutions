@@ -15,7 +15,12 @@
                     (filtered-accumulate filter combiner null-value term (next a) next b))
           (filtered-accumulate filter combiner null-value term (next a) next b))))
 
-;求出在区间a到b中所有素数之和
+; now the accumulate can be as follow:
+(define (accumulate combiner null-value term a next b)
+  (filtered-accumulate (lambda (x) true)
+                       combiner null-value term a next b))
+
+; a)
 (define (primes-sum a b)
   (define (combiner x y) (+ x y))
   (define (term x) x)
@@ -28,7 +33,7 @@
         (else
          (filtered-accumulate prime? combiner 0 term a next b))))
 
-;小于n的所有与n互素的正整数之乘积
+; b)
 (define (prime-product n)
   (if (< n 2)
       "n SHOULD BE more than 2."
