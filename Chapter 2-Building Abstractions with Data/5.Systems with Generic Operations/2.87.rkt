@@ -1,7 +1,7 @@
 (define (install-polynomial-package)
   ;;;;
   ;;;;
-  (define (=zero? coe)
+  (define (zero-poly? poly)
     ;when the term-list is sorted by order, it means the
     ;the coefficient would not be zero as long as one
     ;term's coeff is not zero
@@ -10,16 +10,14 @@
             ((=zero? (coeff (first-term term-list)))
              (list-test (rest-terms term-list)))
             (else false)))
-    (cond ((number? coe) (= coe 0))
-          ((and (pair? coe) (variable? (car coe)))
-           (list-test coe))
+    (cond ((and (pair? poly) (variable? (car poly)))
+           (list-test (term-list poly)))
           (else
-           (error "wrong type -- =ZERO?"
-                  (list coe)))))
+           (error "wrong type -- =ZERO?" (list poly)))))
                   
 
   (put '=zero? 'polynomial
-       (lambda (x) (=zero? x)))
+       (lambda (x) (zero-poly? x)))
   'done)
 
 (define (=zero? x)

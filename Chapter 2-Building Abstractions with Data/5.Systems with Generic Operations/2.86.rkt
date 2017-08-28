@@ -2,16 +2,16 @@
 (define (cosine x) (apply-generic 'cosine x)) 
   
 ;; add into scheme-number package 
-(put 'sine 'scheme-number 
-     (lambda (x) (tag (sin x)))) 
-(put 'cosine 'scheme-number 
-     (lambda (x) (tag (cos x)))) 
+(put 'sine 'scheme-number
+     (lambda (x) (tag (sin x))))
+(put 'cosine 'scheme-number
+     (lambda (x) (tag (cos x))))
 
 ;; add into rational package 
 (put 'sine 'rational 
-     (lambda (x) (tag (sin x)))) 
+     (lambda (x) (tag (sin (/ (numer x) (denom x))))))
 (put 'cosine 'rational 
-     (lambda (x) (tag (cos x)))) 
+     (lambda (x) (tag (cos (/ (numer x) (denom x))))))
 
 ;; To accomodate generic number in the complex package,  
 ;; we should replace operators such as + , * with theirs 

@@ -32,3 +32,7 @@
 
 (define C (make-connector))
 (define F (c-f-converter C))
+(probe 'C C)
+(probe 'F F)
+
+(set-value! C 100 'user)

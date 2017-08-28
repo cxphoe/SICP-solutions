@@ -5,7 +5,7 @@
 (define (get-item deque endpoint)
   ;get a item from front-ptr or rear-ptr
   (if (empty-deque? deque)
-      (error "Can't get item from am empty deque" deque)
+      (error "Can't get item from an empty deque" deque)
       (caar (endpoint deque))))
 
 (define (front-deque deque) (get-item deque front-ptr))

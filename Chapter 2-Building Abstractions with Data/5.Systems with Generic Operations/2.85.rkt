@@ -36,15 +36,16 @@
        (lambda (x) (rational->scheme-number x)))
   'done)
 
-(define (project x)
-  ((get 'project (type-tag x)) (contents x)))
+(define (project x) (apply-generic 'project x))
 
 (define (drop x)
-  (let ((lower (project x)))
-    (if (and lower
-             (equ? x (raise lower)))
-        (drop lower)
-        x)))
+  (if (pair? x)
+      (let ((type (type-tag x)))
+        (cond ((eq? type 'scheme-number) x)  ; no project for integar
+              ((eq? x (raise (project x)))
+               (drop (project x)))
+              (else x)))
+      x)) ; #t or #f
 
 (load "2.84.rkt")
 
@@ -53,18 +54,24 @@
   (let ((type-tags (map type-tag args)))
     (let ((proc (get op type-tags)))
       (if proc
-          (drop (apply proc (map contents args)))  ;redefined part
+          (let ((res (apply proc (map contents args))))  ; redefined part
+            (if (or (eq? op 'drop)                       ;
+                    (eq? op 'raise)                      ;
+                    (eq? op 'project))                   ;
+                res                                      ;
+                (drop res)))                             ;
           (let ((type1 (car type-tags))
                 (type2 (cadr type-tags))
                 (a1 (car args))
                 (a2 (cadr args)))
-            (if (not (eq? type1 type2))
+            (if (and (not (eq? type1 type2))
+                     (= (length args) 2))
                 (let ((a1-upper (raise-up a1 a2))
                       (a2-upper (raise-up a2 a1)))
                   (cond (a1-upper
-                         (apply-generic op . a1-upper a2))
+                         (apply-generic op a1-upper a2))
                         (a2-upper
-                         (apply-generic op . a1 a2-upper))
+                         (apply-generic op a1 a2-upper))
                         (else
                          (error "No method for these types"
                                 (list op type-tags)))))

@@ -1,79 +1,73 @@
-(define (make-table)
-  (let ((local-table (list '*table*)))
-    ;;define bigger?
-    ;;define smaller?
-    
-    (define (search-tree given-key tree)
-      (if (null? tree)
-          false
-          (let ((tree-entry (car tree)))
-            (cond ((equal? given-key (key tree-entry))
-                   tree-entry)
-                  ((bigger? given-key (key tree-entry))
-                   (search-tree given-key (right-branch tree)))
-                  ((smaller? given-key (key tree-entry))
-                   (search-tree given-key (left-branch tree)))
-                  (else
-                   (error "wrong key type" given-key))))))
+(define (entry tree) (car tree))
+(define (left-branch tree) (cadr tree))
+(define (right-branch tree) (caddr tree))
 
-    (define (adjoin-tree given-key value tree)
-      (let ((entry-tree (entry tree)))
-        (cond ((smaller? given-key (key entry-tree))
-               (if (null? (left-brach tree))
-                   (set-car! (cdr tree) (list (cons given-key value)
-                                              '()
-                                              '()))
-                   (adjoin-tree given-key value (left-branch tree))))
-              ((bigger? given-key (key entry-tree))
-               (if (null? (right-branch tree))
-                   (set-car! (cddr tree) (list (cons given-key value)
-                                               '()
-                                               '()))
-                   (adjoin-tree given-key value (right-branch tree))))
+(define (make-tree entry left right)
+  (list entry left right))
+
+(define (search-tree given-key tree)
+  (if (null? tree)
+      false
+      (let ((set-entry (entry tree)))
+        (cond ((equ? given-key (key set-entry))
+               set-entry)
+              ((less? given-key (key set-entry))
+               (search-tree given-key (left-branch tree)))
+              ((greater? given-key (key set-entry))
+               (search-tree given-key (right-branch tree)))
               (else
-               (error "Wrong key type -- ADJOIN-TREE" given-key)))))
+               (error "wrong key type" given-key))))))
 
-    (define (adjoin-table key-list value tree)
-      (define (create-new key-list value)
-        (if (null? (cdr key-list))
-            (cons (car key-list) value)
-            (list (cons (car key-list)
-                        (create-new (cdr key-list) value))
-                  '()
-                  '())))
-      (adjoin-tree (car key-list)
-                   (create-new (cdr key-list) value)
-                   tree))
+;;define equ?
+;;define greater?
+;;define less?
+
+(define (make-table)
+  ; ((key . value) left-branch rignt-branch)
+  (let ((local-table (list '*table*)))
+    ; use assignment instead of return a brand new table
+    (define (adjoin-table pair table)
+      (if (null? (cdr table))
+          (set-cdr! table (make-tree pair '() '()))
+          (let ((tree (cdr table))
+                (key (car pair)))
+            (let ((entry-pair (entry tree)))
+              (cond ((equ? key (car entry-pair))
+                     (set-car! table pair))
+                    ((less? key (car entry-pair))
+                     (adjoin-table pair (left-branch tree)))
+                    ((greater? key (car entry-pair))
+                     (adjoin-table pair (right-branch tree)))
+                    (else
+                     (error "Wrong type of key" (list pair))))))))
+    
+    (define (generic-lookup op init key-list)
+      (define (iter table keys)
+        (cond ((null? table) #f)
+              ((null? keys) table)
+              (else
+               (let ((subtable (search-tree (car keys) (cdr table))))
+                 (if subtable
+                     (iter subtable (cdr keys))
+                     (iter (op (car keys) table)
+                           (cdr keys)))))))
+      (if (null? key-list)
+          (error "need at least one key")
+          (iter init key-list)))
     
     (define (lookup key-list)
-      (define (iter-lookup key-list table)
-        (cond ((= 1 (length key-list))
-               (let ((record (search-tree (car key-list) (cdr table))))
-                 (if record
-                     (cdr record)
-                     false)))
-              (else
-               (let ((subtable (search-tree (car key-list) (cdr table))))
-                 (if subtable
-                     (iter-lookup (cdr key-list) subtable)
-                     false)))))
-      (iter-lookup key-list local-table))
-
+      (generic-lookup (lambda (key table) '())
+                      local-table
+                      key-list))
+    
     (define (insert! key-list value)
-      (define (iter-lookup key-list table)
-        (cond ((= 1 (length key-list))
-               (let ((record (search-tree (car key-list) (cdr table))))
-                 (if record
-                     (set-cdr! record value)
-                     (adjoin-tree key value (cdr table)))))
-              (else
-               (let ((subtable (search-tree (car key-list) (cdr table))))
-                 (if subtable
-                     (iter-lookup (cdr key-list) subtable)
-                     (adjoin-table key-list value (cdr table)))))))
-      (if (null? key-list)
-          (error "NEED at least one key -- INSERT!" key-list)
-          (iter-lookup key-list local-table)))
+      (define (create-new key table)
+        (let ((new-pair (cons key '())))
+          (adjoin-table key value table)
+          new-pair))
+      (set-cdr! (generic-lookup create-new local-table key-list)
+                value)
+      'ok)
 
     (define (dispatch m)
       (cond ((eq? m 'lookup-proc) lookup)
