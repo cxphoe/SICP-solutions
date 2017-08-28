@@ -1,0 +1,35 @@
+(define (contains-cycle? seq)
+  (define (safe-cdr s)
+    (if (pair? s)
+        (cdr s)
+        s))
+  (define (iter a b)
+    (cond ((not (pair? a)) #f)
+          ((not (pair? b)) #f)
+          ((eq? a b) #t)
+          (else (iter (safe-cdr a) (safe-cdr (safe-cdr b))))))
+  (cond ((not (pair? seq)) #f)
+        ((iter (safe-cdr seq) (safe-cdr (safe-cdr seq))) #t)
+        (else (ormap contains-cycle? seq))))
+
+(define (ormap proc seq)
+  (cond ((not (pair? seq)) #f)
+        ((proc (car seq)) #t)
+        (else (ormap proc (cdr seq)))))
+
+(define (test x)
+  (display (contains-cycle? x)) (newline))
+
+(define t1 '(1))
+(set-cdr! t1 t1)
+
+(define t2 '(1 2 3 4 5 6))
+(set-cdr! (cddddr t2) (cdr t2))
+
+(define t3 '(1 2 3 4 5 6))
+(set-car! (cdddr t3) t2)
+
+(test t1)
+(test t2)
+(test t3)
+(test '(1 2 (3 4) (5 (6 7)) 8))
