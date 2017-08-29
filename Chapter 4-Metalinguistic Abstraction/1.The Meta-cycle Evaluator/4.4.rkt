@@ -12,8 +12,8 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
-        ((eval-and? exp) (eval (and->if exp) env))
-        ((eval-or? exp) (eval (or->if exp) env))
+        ((and? exp) (eval (and->if exp) env))
+        ((or? exp) (eval (or->if exp) env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -21,7 +21,7 @@
          (error "Unknown expression type -- EVAL" exp))))
 
 ;;and: (and <predicate1> <predicate2> ... <predicaten>)
-(define (eval-and? exp)
+(define (and? exp)
   (tagged-list? exp 'and))
 
 (define (and-predicates exp) (cdr exp))
@@ -38,10 +38,10 @@
             (make-if first first false)
             (make-if first
                      (expand-and-predicates rest)
-                     false))))
+                     'false))))
   
 ;;or: (or <predicate1> <predicate2> ... <predicaten>)
-(define (eval-or? exp)
+(define (or? exp)
   (tagged-list? exp 'or))
 
 (define (or-predicates exp) (cdr exp))

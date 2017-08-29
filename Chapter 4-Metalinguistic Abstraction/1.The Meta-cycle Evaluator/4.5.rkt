@@ -13,14 +13,19 @@
 (define (cond-expand? clause)
   (eq? (cadr clause) '=>))
 
-(define (cond-op clause) (caddr clause))
-
 (define (cond-predicate clause) (car clause))
-
 (define (cond-actions clause) (cdr clause))
+(define (cond-op clause) (caddr clause))
 
 (define (cond->if exp)
   (expand-clauses (cond-clauses exp)))
+
+(define (cond-op->lambda first rest)
+  (make-lambda '(_parameter)
+               (make-if _parameter
+                        (make-application (cond-op first)
+                                          _parameter)
+                        (expand-clauses rest))))
 
 (define (expand-clauses clauses)
   (if (null? clauses)
@@ -35,12 +40,7 @@
               ((cond-expand? first)
                ;;to avoid the potential effect caused by repeatedly
                ;;calling the predicate
-               (make-application (make-lambda '(_parameter)
-                                              (make-if _parameter
-                                                       (make-application
-                                                        (cond-op first)
-                                                        _parameter)
-                                                       (expand-clauses rest)))
+               (make-application (cond-op->lambda first rest)
                                  (cond-predicate first)))
               (else (make-if (cond-predicate first)
                              (sequence->exp (cond-actions first))

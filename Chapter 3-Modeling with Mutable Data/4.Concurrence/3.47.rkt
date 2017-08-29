@@ -2,7 +2,7 @@
   (let ((lock (make-mutex))
         (taken 0))
     (define (semaphore m)
-      (cond ((eq? m 'require)
+      (cond ((eq? m 'acquire)
              (if (< taken n)
                  (begin (set! taken (+ 1 taken))
                         (lock 'release))

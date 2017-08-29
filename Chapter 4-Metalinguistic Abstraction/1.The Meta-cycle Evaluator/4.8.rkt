@@ -7,7 +7,8 @@
 
 ;;named-let: (let <var> <bindings> <body>)
 (define (named-let? exp)
-  (tagged-list? exp 'let))
+  (and (tagged-list? exp 'let)
+       (symbol? (cadr exp))))
 
 (define (named-let-definition-var exp) (cadr exp))
 (define (named-let-bindings exp) (caddr exp))

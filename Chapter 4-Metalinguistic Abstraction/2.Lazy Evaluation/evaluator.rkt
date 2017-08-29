@@ -24,6 +24,7 @@
   (cond ((self-evaluating? exp) exp)
         ((variable? exp) (lookup-variable-value exp env))
         ((quoted? exp) (text-of-quotation exp env))
+        ((lazy-pair? exp) exp)
         ((and? exp) (eval (and->if exp) env))
         ((or? exp) (eval (or->if exp) env))
         ((do? exp) (eval (do->if exp) env))

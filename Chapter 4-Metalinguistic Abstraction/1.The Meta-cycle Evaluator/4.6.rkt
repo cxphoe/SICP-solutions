@@ -8,18 +8,11 @@
 (define (let-body exp) (cddr exp))
 
 (define (let->combination exp)
-  (define (separate assigns res)
-    (if (null? assigns)
-        res
-        (let ((vars (car res)) (exps (cadr res)) (first (car assigns)))
-          (separate (cdr assigns)
-                    (list (cons (car first) vars)
-                          (cons (cadr first) exps))))))
-  (let ((s (separate (let-assigns exp))))
-    (let ((vars (car s)) (exps (cadr s)))
-      (make-application (make-lambda vars
-                                     (let-body exp))
-                        exps))))
+  (let ((assigns (let-assigns exp)))
+    (let ((vars (map car assigns))
+          (vals (map cadr assigns)))
+      (make-application (make-lambda vars (let-body exp))
+                        vals))))
 
 (define (make-application proc parameters)
   (cons proc parameters))

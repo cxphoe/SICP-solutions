@@ -1,40 +1,6 @@
 (load "evaluator.rkt")
 (load "environment.rkt")
 
-(define (primitive-procedure? proc)
-  (tagged-list? proc 'primitive))
-
-(define (primitive-implementation proc) (cadr proc))
-
-(define primitive-procedures
-  (list (list 'car car)
-        (list 'cdr cdr)
-        (list 'cons cons)
-        (list 'null? null?)
-        (list '+ +)
-        (list '* *)
-        (list '- -)
-        (list '/ /)
-        (list '= =)
-        (list '> >)
-        (list '< <)
-        (list '<= <=)
-        (list '>= >=)
-        (list 'display display)
-        (list 'runtime runtime)))
-
-(define (primitive-procedure-names)
-  (map car
-       primitive-procedures))
-
-(define (primitive-procedure-objects)
-  (map (lambda (proc) (list 'primitive (cadr proc)))
-       primitive-procedures))
-
-(define (apply-primitive-procedure proc args)
-  (apply-in-underlying-scheme
-   (primitive-implementation proc) args))
-
 (define input-prompt ";;; L-Eval input:")
 (define output-prompt ";;; L-Eval value:")
 
@@ -53,11 +19,13 @@
   (newline) (display string) (newline))
 
 (define (user-print object)
-  (if (compound-procedure? object)
-      (display (list 'compound-procedure
-                     (procedure-parameters object)
-                     (procedure-body object)))
-      (display object)))
+  (cond ((compound-procedure? object)
+         (display (list 'compound-procedure
+                        (procedure-parameters object)
+                        (procedure-body object))))
+        ((lazy-pair? object)
+         (print-lazy-pair object the-global-environment))
+        (else (display object))))
 
 (define (setup-environment)
   (let ((initial-env

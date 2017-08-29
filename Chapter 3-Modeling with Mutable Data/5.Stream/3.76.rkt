@@ -5,4 +5,4 @@
   (let ((after-smooth (smooth input-stream)))
     (stream-map sign-change-detetor
                 after-smooth
-                (stream-cdr after-smooth))))
+                (cons-stream 0 after-smooth))))

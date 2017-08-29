@@ -15,4 +15,16 @@
 (define T2 (pairs integars integars))
 
 (define (T n)
-  (display (stream-ref T2 (- n 1))))
+  (display (stream-ref T2 n))
+  (newline))
+
+(define (show n)
+  (let ((c 0))
+    (define (count)
+      (if (< c n)
+          (begin (T c)
+                 (set! c (+ c 1))
+                 (count))))
+    (count)))
+
+(show 10)

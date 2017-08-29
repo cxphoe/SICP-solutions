@@ -10,8 +10,8 @@
 (define (expand-assigns assigns body)
   (if (null? assigns)
       body
-      (make-let (car assigns)
-                (expand-assigns (cdr assigns body)))))
+      (make-let (list (car assigns))
+                (expand-assigns (cdr assigns) body))))
 
 (define (make-let assigns body)
-  (list 'let assigns body))
+  (cons 'let (cons assigns body)))

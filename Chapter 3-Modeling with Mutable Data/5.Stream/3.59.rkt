@@ -17,5 +17,4 @@
   (cons-stream 1 (integrate-series sine-series)))
 
 (define sine-series
-  (cons-stream 0 (integrate-series (stream-map (lambda (x) (- x))
-                                               cosine-series))))
+  (cons-stream 0 (integrate-series (stream-map - cosine-series))))

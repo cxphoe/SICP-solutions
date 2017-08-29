@@ -1,10 +1,5 @@
 (load "pairs.rkt")
 
-(define (cut-head s n)
-  (if (> (stream-car s) n)
-      s
-      (cut-head (stream-cdr s) n)))
-
 (define (triples S T U)
   (let ((ps (pairs T U)))
     (cons-stream

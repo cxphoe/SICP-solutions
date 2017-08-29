@@ -43,12 +43,22 @@
 ;;while: (while <test>
 ;;         <command>)
 (define (while? exp)
-  (tagged-list exp 'while))
+  (tagged-list? exp 'while))
 
 (define (while-test exp) (cadr exp))
 (define (while-command exp) (cddr exp))
 
-(define (while->if exp)
-  (make-if (while-test exp)
-           (sequence->exp (cons (while-command exp)
-                                (while->if exp)))))
+(define (while-iter exp)
+  (list 'define '(while-iter)
+        (make-if (while-test exp)
+                 (sequence->exp (append (while-command exp)
+                                        (list '(while-iter))))
+                 ''done)))
+
+(define (while->combination exp)
+  (make-application (make-lambda
+                     '()
+                     (list (sequence->exp
+                            (list (while-iter exp)
+                                  '(while-iter)))))
+                    '()))

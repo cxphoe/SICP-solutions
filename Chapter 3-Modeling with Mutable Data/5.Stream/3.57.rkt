@@ -18,5 +18,6 @@
              (display-stream (stream-cdr s) (- n 1)))))
 
 (stream-ref fibs 10)
-(display "the running time of add: ")
+(display "the add runs: ")
 (display count)
+(display " times")

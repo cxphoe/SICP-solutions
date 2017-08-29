@@ -10,6 +10,7 @@
   (list (list 'car car)
         (list 'cdr cdr)
         (list 'cons cons)
+        (list 'list list)
         (list 'null? null?)
         (list '+ +)
         (list '* *)

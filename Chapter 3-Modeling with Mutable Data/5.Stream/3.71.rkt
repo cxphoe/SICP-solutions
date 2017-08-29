@@ -28,5 +28,10 @@
 
 (define ram-stream 
   (stream-map cadr  
-              (stream-filter (lambda (x)(= (cube-weight (car x))(cadr x)))  
-                             (stream-map list cube-stream (stream-cdr (stream-map cube-weight cube-stream)))))) 
+              (stream-filter (lambda (x)
+                               (= (cube-weight (car x))(cadr x)))  
+                             (stream-map list
+                                         cube-stream
+                                         (stream-cdr (stream-map
+                                                      cube-weight
+                                                      cube-stream))))))
