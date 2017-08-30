@@ -1,4 +1,4 @@
-(load "1.3.3_fixed_point.rkt")
+(load "fixed_point.rkt")
 (load "1.43.rkt")
 
 (define (average-damp f)
