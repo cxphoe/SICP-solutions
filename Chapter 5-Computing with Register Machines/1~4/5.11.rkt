@@ -1,3 +1,6 @@
+;; a)
+; can skip some instructions
+
 ;; b)
 (define (make-save inst machine stack pc)
   (let ((reg-name (stack-inst-reg-name inst))
@@ -26,17 +29,19 @@
                   (cons (cdr reg) (cdr reg-stack)))))
     (define (pop reg-name)
       (let ((reg-stack (assoc reg-name s)))
-        (if (null? (cdr reg-stack))
-            (error "Empty stack -- POP" (car reg))
-            (let ((top (cadr reg-stack)))
-              (set-cdr! reg-stack (cddr reg-stack))
-              top))))
+        (if reg-stack
+            (if (null? (cdr reg-stack))
+                (error "Empty stack -- POP" (car reg))
+                (let ((top (cadr reg-stack)))
+                  (set-cdr! reg-stack (cddr reg-stack))
+                  top))
+            (error "unbound register -- POP"))))
     (define (add reg-name)                       ; new definition for
       (set! s (cons (list reg-name) s)))         ; add new reg stack
     (define (initialize)
-      (set! s (for-each (lambda (stack)
-                          (set-cdr! stack '()))
-                        s))
+      (for-each (lambda (stack)
+                  (set-cdr! stack '()))
+                s)
       'done)
     (define (dispatch message)
       (cond ((eq? message 'push) push)
