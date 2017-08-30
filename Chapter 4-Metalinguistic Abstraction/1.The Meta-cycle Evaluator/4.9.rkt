@@ -56,6 +56,7 @@
                  ''done)))
 
 (define (while->combination exp)
+  ; use local definition to avoid name-clash
   (make-application (make-lambda
                      '()
                      (list (sequence->exp

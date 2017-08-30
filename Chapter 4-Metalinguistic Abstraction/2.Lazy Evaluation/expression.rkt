@@ -28,11 +28,8 @@
   (list 'cons x y))
 
 (define (make-list exps)
-  (cond ((null? exps) (list 'quote '()))
-        ((not (pair? exps)) exps)
-        (else
-         (make-lazy-pair (list 'quote (car exps))
-                         (make-list (cdr exps))))))
+  (make-lazy-pair (list 'quote (car exps))
+                  (list 'quote (cdr exps))))
 
 (define (print-lazy-pair seq env)
   (let ((limit 10))
@@ -117,11 +114,7 @@
 
 ;;quote: (quote <text-of-quotation>)
 (define (quoted? exp) (tagged-list? exp 'quote))
-(define (text-of-quotation exp env)             ; changed for lazy-list
-  (let ((text (cadr exp)))
-    (if (pair? text)
-        (eval (make-list text) env)
-        text)))
+(define (text-of-quotation exp env) (cadr exp))
 
 (define (tagged-list? exp tag)
   (if (pair? exp)

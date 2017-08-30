@@ -4,15 +4,16 @@
   (tagged-list? exp 'let))
 
 (define (let-assigns exp) (cadr exp))
+(define (let-variables exp) (map car (let-assigns exp)))
+(define (let-params exp) (map cadr (let-assigns exp)))
 
 (define (let-body exp) (cddr exp))
 
 (define (let->combination exp)
-  (let ((assigns (let-assigns exp)))
-    (let ((vars (map car assigns))
-          (vals (map cadr assigns)))
-      (make-application (make-lambda vars (let-body exp))
-                        vals))))
+  (make-application
+   (make-lambda (let-variables exp)
+                (let-body exp))
+   (let-params exp)))
 
 (define (make-application proc parameters)
   (cons proc parameters))

@@ -1,5 +1,4 @@
 (load "expression.rkt")
-(load "4.34.rkt")
 
 ;; make a copy of the original apply in the scheme
 (define apply-in-underlying-scheme apply)
@@ -23,7 +22,7 @@
 (define (eval exp env)
   (cond ((self-evaluating? exp) exp)
         ((variable? exp) (lookup-variable-value exp env))
-        ((quoted? exp) (text-of-quotation exp env))
+        ((quoted? exp) (eval-quote exp env))
         ((lazy-pair? exp) exp)
         ((and? exp) (eval (and->if exp) env))
         ((or? exp) (eval (or->if exp) env))
@@ -74,6 +73,12 @@
       '()
       (cons (delay-it (first-operand exps) env)
             (list-of-delayed-args (rest-operands exps) env))))
+
+(define (eval-quote exp env)
+  (let ((quoted (text-of-quotation exp env)))
+    (if (pair? quoted)
+        (eval (make-list quoted) env)
+        quoted)))
 
 (define (eval-if exp env)
   (if (true? (eval (if-predicate exp) env))
