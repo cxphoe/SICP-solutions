@@ -1,8 +1,95 @@
 (define (assemble controller-text machine)
   (extract-labels controller-text
                   (lambda (insts labels)
+                    (update-data! insts machine)            ; add
                     (update-insts! insts labels machine)
                     insts)))
+
+(define (update-data! insts machine)
+  (let ((inst-category (classify insts)))
+    (display (car inst-category))
+    ((machine 'update-data) inst-category
+                            (find-label-regs inst-category)
+                            (find-stacked-regs inst-category)
+                            (find-val-sources inst-category))))
+
+; classify the insts
+(define (classify insts)
+  (let ((inst-category '()))
+    (for-each (lambda (inst)
+                (let ((cate (assoc (car inst) inst-category)))
+                  (if cate
+                      (let ((records (cdr cate)))
+                        (display records)
+                        (newline)
+                        (if (not (memq inst records))
+                            (set-cdr! cate (cons inst (cdr cate)))))
+                      (set! inst-category
+                            (cons (list (car inst) inst)
+                                  inst-category)))))
+              insts)
+    inst-category))
+
+(define (classify-insts category inst inst-category)
+  (let ((cate (assoc category inst-category)))
+    (if cate
+        (let ((records (cdr cate)))
+          (if (not (memq inst records))
+              (set-cdr! cate (cons inst (cdr cate)))))
+        (set! inst-category
+              (cons (list category inst)
+                    inst-category)))
+    inst-category))
+
+; find registers that store entries
+(define (find-label-regs inst-category)
+  (let ((label-registers '())
+        (goto-insts (assoc 'goto inst-category)))
+    (for-each (lambda (inst)
+                (let ((reg (cadr (cadr inst))))
+                  (if (not (memq reg labels))
+                      (set! label-registers (cons reg label-registers)))
+                  'done))
+              (filter (lambda (inst)
+                        (register-exp? (cadr inst)))
+                      (cdr goto-insts)))
+    label-registers))
+
+; find stacked registers
+(define (find-stacked-regs inst-category)
+  (let ((stacked-regs '())
+        (stack-insts (append
+                      (cdr (assoc 'save inst-category))
+                      (cdr (assoc 'restore inst-category)))))
+    (for-each (lambda (inst)
+                (let ((reg-name (cadr inst)))
+                  (if (not (memq reg-name stacked-regs))
+                      (set! stacked-regs
+                            (cons reg-name stacked-regs)))
+                  'done))
+              stack-insts)
+    stacked-insts))
+
+; find sources of registers' values
+(define (find-val-sources inst-category)
+  (let ((val-sources '())
+        (assign-insts (assoc 'assign inst-category)))
+    (for-each (lambda (inst)
+                (let ((reg-name (cadr inst))
+                      (source (cddr inst)))
+                  (let ((val-seq (assoc reg-name val-sources)))
+                    (if val-seq
+                        (if (not (memq (cdr val-seq) source))
+                            (set-cdr! val-seq
+                                      (cons source (cdr val-seq))))
+                        (set! val-sources
+                              (cons (list reg-name source)
+                                    val-sources)))
+                    'done)))
+              (cdr assign-insts))
+    val-sources))
+
+;-------------------------------------------------------------------------;
 
 (define (extract-labels text receive)
   (if (null? text)

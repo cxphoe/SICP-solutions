@@ -1,9 +1,9 @@
-;(load "5.12a.rkt")
-(load "machine-model.rkt")
+(load "5.12a.rkt")
+;(load "machine-model.rkt")
 
 (define fib-machine
   (make-machine
-;   (list 'val 'n 'continue)
+   (list 'val 'n 'continue)
    (list (list '= =) (list '- -) (list '+ +) (list '< <))
    '(controller
        (assign continue (label fib-done))
@@ -37,13 +37,14 @@
 (set-register-contents! fib-machine 'n 10)
 ;(fib-machine 'trace-on)
 ;(trace-register fib-machine 'val)
-(set-breakpoint fib-machine 'controller 1)
-(set-breakpoint fib-machine 'afterfib-n-2 10)
-(set-breakpoint fib-machine 'afterfib-n-1 5)
-(set-breakpoint fib-machine 'fib-loop 10)
+;(set-breakpoint fib-machine 'controller 1)
+;(set-breakpoint fib-machine 'afterfib-n-2 10)
+;(set-breakpoint fib-machine 'afterfib-n-1 5)
+;(set-breakpoint fib-machine 'fib-loop 10)
 
 (start fib-machine)
 
+;; for 5.12
 ;(get-register-contents fib-machine 'val)
 ;(newline)
-;(show fib-machine)
+(show fib-machine)

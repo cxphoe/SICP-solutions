@@ -1,5 +1,12 @@
 (load "5.12b.rkt")
 
+(define (filter proc seq)
+  (cond ((null? seq) '())
+        ((proc (car seq))
+         (cons (car seq) (filter proc (cdr seq))))
+        (else
+         (filter proc (cdr seq)))))
+
 ;; machine implementation
 (define (make-new-machine)
   (let ((pc (make-register 'pc))
@@ -8,8 +15,8 @@
         (the-instruction-sequence '())
         ;-----------update-------------;
         (instruction-category '())
-        (labels '())
-        (stacked-register '())
+        (label-regs '())
+        (stacked-regs '())
         (register-val-source '())
         ;------------------------------;
         )
@@ -39,76 +46,13 @@
                 ((instruction-execution-proc (car insts)))
                 (execute)))))
       ;----------------------update--------------------;
-      (define (update-data text)
-        (classify text)
-        (update-label)
-        (update-stacked-register)
-        (update-register-val-source)
+      (define (update-data cate lregs sregs sources)
+        (set! instruction-category cate)
+        (set! label-regs lregs)
+        (set! stacked-regs sregs)
+        (set! register-val-source sources)
         'finished)
-      
-      (define (in? seq elt)
-        (cond ((null? seq) false)
-              ((equal? (car seq) elt) true)
-              (else (in? (cdr seq) elt))))
-      (define (filter proc seq)
-        (cond ((null? seq) '())
-              ((proc (car seq))
-               (cons (car seq) (filter proc (cdr seq))))
-              (else
-               (filter proc (cdr seq)))))
-      (define (classify insts)
-        (for-each (lambda (inst)
-                    (let ((category (car inst)))
-                      (update-category-instruction category inst)))
-                  (filter (lambda (x) (pair? x))
-                          insts)))
-      (define (update-category-instruction category inst)
-        (let ((cate (assoc category instruction-category)))
-          (if cate
-              (let ((records (cdr cate)))
-                (if (not (in? records inst))
-                    (set-cdr! cate (cons inst (cdr cate)))))
-              (set! instruction-category
-                    (cons (list category inst)
-                          instruction-category)))
-          'done))
-      (define (update-label)
-        (let ((goto-insts (assoc 'goto instruction-category)))
-          (for-each (lambda (inst)
-                      (let ((reg (cadr (cadr inst))))
-                        (if (not (memq reg labels))
-                            (set! labels (cons reg labels)))
-                        'done))
-                    (filter (lambda (inst)
-                              (eq? (car (cadr inst)) 'reg))
-                            (cdr goto-insts)))))
-      (define (update-stacked-register)
-        (let ((stack-insts (append
-                            (cdr (assoc 'save instruction-category))
-                            (cdr (assoc 'restore instruction-category)))))
-          (for-each (lambda (inst)
-                      (let ((reg-name (cadr inst)))
-                       (if (not (memq reg-name stacked-register))
-                            (set! stacked-register
-                                  (cons reg-name stacked-register)))
-                        'done))
-                    stack-insts)))
-      (define (update-register-val-source)
-        (let ((assign-insts (assoc 'assign instruction-category)))
-          (for-each (lambda (inst)
-                      (let ((reg-name (cadr inst))
-                            (source (cddr inst)))
-                        (let ((val-seq (assoc reg-name
-                                              register-val-source)))
-                          (if val-seq
-                              (if (not (in? (cdr val-seq) source))
-                                  (set-cdr! val-seq
-                                            (cons source (cdr val-seq))))
-                              (set! register-val-source
-                                    (cons (list reg-name source)
-                                          register-val-source)))
-                          'done)))
-                    (cdr assign-insts))))
+      ; for presentation of collected data
       (define (display-newline str)
         (display str)
         (newline))
@@ -163,8 +107,8 @@
               (else (error "Unknown request -- MACHINE" message))))
       dispatch)))
 
-(define (show machine)
-  (machine 'show-data))
+(define (show machine)              ; add
+  (machine 'show-data))             ;
 
 (define (start machine)
   (machine 'start))
@@ -187,7 +131,7 @@
     ((machine 'install-operations) ops)
     ((machine 'install-instruction-sequence)
      (assemble controller-text machine))
-    ((machine 'update-data) controller-text)
+    ((machine 'update-data) controller-text)        ; add
     machine))
 
 ;; register implementation
@@ -224,9 +168,9 @@
     (define (add reg-name)                       
       (set! s (cons (list reg-name) s)))         
     (define (initialize)
-      (set! s (for-each (lambda (stack)
-                          (set-cdr! stack '()))
-                        s))
+      (for-each (lambda (stack)
+                  (set-cdr! stack '()))
+                s)
       'done)
     (define (dispatch message)
       (cond ((eq? message 'push) push)
