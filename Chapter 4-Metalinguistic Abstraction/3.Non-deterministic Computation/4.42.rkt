@@ -8,9 +8,7 @@
             (cons result rest))))) 
 
 (define (remove seq elt)
-  (cond ((null? seq) '())
-        ((eq? (car seq) elt) (cdr seq))
-        (else (cons (car seq) (remove (cdr seq) elt)))))
+  (filter (lambda (x) (not (eq? x elt))) seq))
 
 (define (combination seq)
   (if (null? (cdr seq))

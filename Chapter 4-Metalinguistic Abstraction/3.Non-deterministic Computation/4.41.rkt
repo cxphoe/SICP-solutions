@@ -5,35 +5,25 @@
           (cons (car seq) (filter proc (cdr seq)))
           (filter proc (cdr seq)))))
 
-(define (merge-map proc seq)
+(define (flatmap proc seq)
   (if (null? seq)
       '()
       (let ((res (proc (car seq))))
         (if (list? res)
-            (append res (merge-map proc (cdr seq)))
-            (cons res (merge-map proc (cdr seq)))))))
+            (append res (flatmap proc (cdr seq)))
+            (cons res (flatmap proc (cdr seq)))))))
 
 (define (remove seq elt)
-  (cond ((null? seq) '())
-        ((eq? (car seq) elt)
-         (cdr seq))
-        (else
-         (cons (car seq) (remove (cdr seq) elt)))))
+  (filter (lambda (x) (not (eq? x elt))) seq))
 
 (define (multiple-dwelling)
-  (define (combination res seq)
+  (define (combination seq)
     (if (null? (cdr seq))
-        (list (append res seq))
-        (let ((alternatives (map (lambda (x) (list x)) seq)))
-          (if (not (null? res))
-              (merge-map (lambda (alter)
-                           (combination (append res alter)
-                                        (remove seq (car alter))))
-                         alternatives)
-              (merge-map (lambda (alter)
-                           (combination alter
-                                        (remove seq (car alter))))
-                         alternatives)))))
+        (list seq)
+        (flatmap (lambda (x)
+                   (map (lambda (y) (cons x y))
+                        (combination (remove seq x))))
+                 seq)))
 
   (define constraint
     (lambda (p1 p2 p3 p4 p5)
@@ -45,7 +35,7 @@
            (> p4 p2)
            (not (= (abs (- p5 p3)) 1)))))
   
-  (let ((alternatives (combination '() '(1 2 3 4 5))))
+  (let ((alternatives (combination '(1 2 3 4 5))))
     (filter (lambda (alter)
               (apply constraint alter))
             alternatives)))
@@ -72,5 +62,11 @@
              (house-iter b c m f (+ s 1))))) 
      (house-iter 1 2 3 2 1)) ; initial values take some restrictions into account 
 
+(define (distinct? seq)
+  (cond ((null? seq) true)
+        ((null? (cdr seq)) true)
+        ((member (car seq) (cdr seq)) false)
+        (else (distinct? (cdr seq)))))
 
-(multiple-dwelling)
+(display (multiple-dwelling))
+(display (multiple-dwellings))

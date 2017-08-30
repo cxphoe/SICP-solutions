@@ -20,3 +20,11 @@
                         (and (supervisor ?p1 ?p3)
                              (supervisor ?p3 p2)))
                     (unique (all-supervisors ?p1 ?p)))))
+
+;;; Query input: 
+(staff-with-one-supervisor ?x ?y) 
+  
+;;; Quary results: 
+(staff-with-one-supervisor (aull dewitt) (warbucks oliver)) 
+(staff-with-one-supervisor (scrooge eben) (warbucks oliver)) 
+(staff-with-one-supervisor (bitdiddle ben) (warbucks oliver)) 

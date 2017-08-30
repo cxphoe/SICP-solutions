@@ -17,6 +17,15 @@
       the-empty-stream
       (cons-stream (proc (stream-car s))
                    (stream-map proc (stream-cdr s)))))
+
+(define (stream-filter proc s)
+  (cond ((stream-null? s) the-empty-stream)
+        ((proc (stream-car s))
+         (cons-stream (stream-car s)
+                      (stream-filter proc (stream-cdr s))))
+        (else
+         (stream-filter proc (stream-cdr s)))))
+      
   
 (define (display-stream s)
   (if (not (stream-null? s))

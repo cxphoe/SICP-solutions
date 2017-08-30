@@ -13,8 +13,4 @@
       (try-next cprocs))))
 
 (define (remove seq elt)
-  (cond ((null? seq) '())
-        ((eq? elt (car seq))
-         (cdr seq))
-        (else
-         (cons (car seq) (remove (cdr seq) elt)))))
+  (filter (lambda (x) (not (eq? elt x))) seq))

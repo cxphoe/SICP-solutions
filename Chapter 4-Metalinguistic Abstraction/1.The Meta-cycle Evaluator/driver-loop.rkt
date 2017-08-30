@@ -1,4 +1,4 @@
-(load "evaluator.rkt")
+(load "analyze.rkt")
 (load "environment.rkt")
 
 (define (primitive-procedure? proc)

@@ -8,12 +8,11 @@
 (define (safe? k positions)
   (let ((kth-row (list-ref positions (- k 1))))
     (define (safe-iter p col)
-      (if (= col k)
-          true
-          (if (and (safe-row? (car p) kth-row)
-                   (safe-diagonal? (car p) kth-row
-                                   col k))
-              (safe-iter (cdr p) (+ col 1)))))
+      (cond ((= col k) true)
+            ((and (safe-row? (car p) kth-row)
+                  (safe-diagonal? (car p) kth-row col k))
+             (safe-iter (cdr p) (+ col 1)))
+            (else false)))
     (safe-iter positions 1)))
 
 (define (list-amb li)

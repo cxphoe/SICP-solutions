@@ -97,10 +97,10 @@
                                 (append-to-form ?v ?y ?z))))
 
 (add-rule-or-assertion! (query-syntax-process
-                         '(rule (last-pair (?x) ?x))))
+                         '(rule (last-pair (?x) (?x)))))
 (add-rule-or-assertion! (query-syntax-process
-                         '(rule (last-pair (?v . ?z) ?x)
-                                (last-pair ?z ?x))))
+                         '(rule (last-pair (?v . ?z) (?x))
+                                (last-pair ?z (?x)))))
 
 (add-rule-or-assertion! (query-syntax-process
                          '(rule (reverse () ()))))

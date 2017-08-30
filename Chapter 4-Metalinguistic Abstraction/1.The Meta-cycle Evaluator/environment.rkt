@@ -26,32 +26,32 @@
           (error "Too few arguments supplied" vars vals))))
 
 ;; answer for question 4.12
-(define (env-loop var-not-in-frame proc env var)
-  (define (scan frame)
-    (define (iter vars vals)
-      (cond ((null? vars) (var-not-in-frame))
-            ((eq? var (car vars)) (proc vals))
-            (else
-             (iter (cdr vars) (cdr vals)))))
-    (iter (frame-variables frame) (frame-values frame)))
-  
+(define (env-loop env var var-not-in-frame proc)
+  (define (scan vars vals)
+    (cond ((null? vars) (var-not-in-frame env))
+          ((eq? var (car vars)) (proc vals))
+          (else
+           (scan (cdr vars) (cdr vals)))))
   (if (eq? env the-empty-environment)
       (error "Unbound variable" var)
       (let ((frame (first-frame env)))
-        (or (scan frame) ; the iteration won't be actived if the value of
-                         ; (scan frame) isn't false, which means the action
-                         ; here is depended on value of (var-not-in-frame)
-            (env-loop var-not-in-frame proc (enclosing-environment env) var)))))
+        (scan (frame-variables frame)
+              (frame-values frame)))))
 
 (define (lookup-variable-value var env)
-  (define (var-not-in-frame) false)
-  (env-loop var-not-in-frame car env var))
+  (define (var-not-in-frame env)
+    (lookup-variable-value var (enclosing-environment env)))
+  (env-loop env var var-not-in-frame car))
+
+(define (set-val! val)
+  (lambda (vals) (set-car! vals val)))
 
 (define (set-variable-value! var val env)
-  (define (var-not-in-frame) false)
-  (env-loop var-not-in-frame (lambda (x) (set-car! x val)) env var))
+  (define (var-not-in-frame env)
+    (set-variable-value! var val (enclosing-environment env)))
+  (env-loop env var var-not-in-frame (set-val! val)))
 
 (define (define-variable! var val env)
-  (define (var-not-in-frame)
+  (define (var-not-in-frame env)
     (add-binding-to-frame! var val (first-frame env)))
-  (env-loop var-not-in-frame (lambda (x) (set-car! x val)) env var))
+  (env-loop env var var-not-in-frame (set-val! val)))

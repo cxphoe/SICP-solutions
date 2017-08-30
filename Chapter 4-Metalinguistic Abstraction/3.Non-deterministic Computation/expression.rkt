@@ -2,6 +2,65 @@
 
 (define (amb-choices exp) (cdr exp))
 
+; predicate tests
+(define (true? x) (not (eq? x false)))
+
+(define (false? x) (eq? x false))
+
+; procedure expression
+(define (make-procedure parameters body env)
+  (list 'procedure parameters body env))
+
+;; primitive procedure
+(define (primitive-procedure? proc)
+  (tagged-list? proc 'primitive))
+
+(define (primitive-implementation proc) (cadr proc))
+
+(define primitive-procedures
+  (list (list 'car car)
+        (list 'cdr cdr)
+        (list 'cons cons)
+        (list 'null? null?)
+        (list 'append append)
+        (list 'list list)
+        (list 'abs abs)
+        (list '+ +)
+        (list '* *)
+        (list '- -)
+        (list '/ /)
+        (list '= =)
+        (list '> >)
+        (list '< <)
+        (list '<= <=)
+        (list '>= >=)
+        (list 'even? even?)
+        (list 'odd? odd?)
+        (list 'not not)
+        (list 'display display)
+        (list 'runtime runtime)))
+
+(define (primitive-procedure-names)
+  (map car
+       primitive-procedures))
+
+(define (primitive-procedure-objects)
+  (map (lambda (proc) (list 'primitive (cadr proc)))
+       primitive-procedures))
+
+(define (apply-primitive-procedure proc args)
+  (apply-in-underlying-scheme
+   (primitive-implementation proc) args))
+
+;; compound procedure
+(define (compound-procedure? p)
+  (tagged-list? p 'procedure))
+
+(define (procedure-parameters p) (cadr p))
+(define (procedure-body p) (caddr p))
+;(define (procedure-body p) (scan-out-defines (caddr p)))
+(define (procedure-environment p) (cadddr p))
+
 ;;self-evaluating: number or string
 (define (self-evaluating? exp)
   (cond ((number? exp) true)
@@ -129,9 +188,17 @@
 
 (define (cond-predicate clause) (car clause))
 (define (cond-actions clause) (cdr clause))
+(define (cond-op clause) (caddr clause))
 
 (define (cond->if exp)
   (expand-clauses (cond-clauses exp)))
+
+(define (cond-op->lambda first rest)
+  (make-lambda '(_parameter)
+               (make-if _parameter
+                        (make-application (cond-op first)
+                                          _parameter)
+                        (expand-clauses rest))))
 
 (define (expand-clauses clauses)
   (if (null? clauses)
@@ -141,18 +208,13 @@
         (cond ((cond-else-clause? first)
                (if (null? rest)
                    (sequence->exp (cond-actions first))
-                   (error "ELSE clause isn't last -- CONE->IF"
+                   (error "ELSE clause isn't last -- COND->IF"
                           clauses)))
               ((cond-expand? first)
                ;;to avoid the potential effect caused by repeatedly
                ;;calling the predicate
-               (make-application (make-lambda '(_parameter)
-                                              (list (make-if '_parameter
-                                                             (make-application
-                                                              (cond-op first)
-                                                              '(_parameter))
-                                                             (expand-clauses rest))))
-                                 (list (cond-predicate first))))
+               (make-application (cond-op->lambda first rest)
+                                 (cond-predicate first)))
               (else (make-if (cond-predicate first)
                              (sequence->exp (cond-actions first))
                              (expand-clauses rest)))))))
@@ -188,14 +250,14 @@
 
 (define (expand-and-predicates preds)
   (if (null? preds)
-      (make-if 'true 'true 'false)
+      'true
       (let ((first (car preds))
             (rest (cdr preds)))
         (if (null? rest)
-            (make-if first first false)
+            (make-if first first 'false)
             (make-if first
                      (expand-and-predicates rest)
-                     false)))))
+                     'false)))))
   
 ;;or: (or <predicate1> <predicate2> ... <predicaten>)
 (define (or? exp)
@@ -255,6 +317,7 @@
                              (do-command exp)
                              (do-expression exp)))))
 
+
 ;;while: (while <test>
 ;;         <command>)
 (define (while? exp)
@@ -263,12 +326,16 @@
 (define (while-test exp) (cadr exp))
 (define (while-command exp) (cddr exp))
 
+(define (while-iter exp)
+  (list 'define '(while-iter)
+        (make-if (while-test exp)
+                 (sequence->exp (append (while-command exp)
+                                        (list '(while-iter))))
+                 ''done)))
+
 (define (while->combination exp)
-  (make-application (make-lambda '()
-                                 (list (sequence->exp (list (list 'define '(while-iter)
-                                                                  (make-if (while-test exp)
-                                                                           (sequence->exp (append (while-command exp)
-                                                                                                  (list '(while-iter))))
-                                                                           ''done))
-                                                            (make-application 'while-iter '())))))
+  (make-application (make-lambda
+                     '()
+                     (list (sequence->exp (list (while-iter exp)
+                                                '(while-iter)))))
                     '()))

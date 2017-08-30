@@ -1,43 +1,6 @@
 (load "analyze.rkt")
 (load "environment.rkt")
 
-(define (primitive-procedure? proc)
-  (tagged-list? proc 'primitive))
-
-(define (primitive-implementation proc) (cadr proc))
-
-(define primitive-procedures
-  (list (list 'car car)
-        (list 'cdr cdr)
-        (list 'cons cons)
-        (list 'null? null?)
-        (list '+ +)
-        (list '* *)
-        (list '- -)
-        (list '/ /)
-        (list '= =)
-        (list '> >)
-        (list '< <)
-        (list '<= <=)
-        (list '>= >=)
-        (list 'even? even?)
-        (list 'odd? odd?)
-        (list 'not not)
-        (list 'display display)
-        (list 'runtime runtime)))
-
-(define (primitive-procedure-names)
-  (map car
-       primitive-procedures))
-
-(define (primitive-procedure-objects)
-  (map (lambda (proc) (list 'primitive (cadr proc)))
-       primitive-procedures))
-
-(define (apply-primitive-procedure proc args)
-  (apply-in-underlying-scheme
-   (primitive-implementation proc) args))
-
 (define input-prompt ";;; Amb-Eval input:")
 (define output-prompt ";;; Amb-Eval value:")
 
@@ -105,5 +68,58 @@
     initial-env))
 
 (define the-global-environment (setup-environment))
+
+;; for queen (question 4.44)
+(define (built-in-define text)
+  (ambeval text
+           the-global-environment
+           (lambda (val next)
+             (user-print val))
+           (lambda ()
+             (announce-output
+              ";;; fail to define"))))
+
+
+(built-in-define '(define (safe-row? row1 row2)
+                    (not (= row1 row2))))
+
+(built-in-define '(define (safe-diagonal? row1 row2 col1 col2)
+                    (not (= (- col2 col1)
+                            (abs (- row2 row1))))))
+
+(built-in-define '(define (list-ref seq n)
+                    (if (= n 0)
+                        (car seq)
+                        (list-ref (cdr seq) (- n 1)))))
+
+(built-in-define '(define (safe? k positions)
+                    (let ((kth-row (list-ref positions (- k 1))))
+                      (define (safe-iter p col)
+                        (cond ((= col k) true)
+                              ((and (safe-row? (car p) kth-row)
+                                    (safe-diagonal? (car p) kth-row col k))
+                               (safe-iter (cdr p) (+ col 1)))
+                              (else false)))
+                      (safe-iter positions 1))))
+
+(built-in-define '(define (list-amb li)
+                    (if (null? li)
+                        (amb)
+                        (amb (car li) (list-amb (cdr li))))))
+
+(built-in-define '(define (enumerate-interval low high)
+                    (if (> low high)
+                        '()
+                        (cons low (enumerate-interval (+ low 1) high)))))
+
+(built-in-define '(define (queen board-size)
+                    (define (queen-iter k positions)
+                      (if (= k board-size)
+                          positions
+                          (let ((row (list-amb (enumerate-interval 1 board-size))))
+                            (let ((new-pos (append positions (list row))))
+                              (require (safe? k new-pos))
+                              (queen-iter (+ k 1) new-pos)))))
+                    (queen-iter 1 '())))
 
 (driver-loop)

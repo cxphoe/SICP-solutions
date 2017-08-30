@@ -1,22 +1,5 @@
 (load "expression.rkt")
 
-; predicate tests
-(define (true? x) (not (eq? x false)))
-
-(define (false? x) (eq? x false))
-
-; procedure expression
-(define (make-procedure parameters body env)
-  (list 'procedure parameters body env))
-
-(define (compound-procedure? p)
-  (tagged-list? p 'procedure))
-
-(define (procedure-parameters p) (cadr p))
-(define (procedure-body p) (caddr p))
-;(define (procedure-body p) (scan-out-defines (caddr p)))
-(define (procedure-environment p) (cadddr p))
-
 ; environment operations
 (define (enclosing-environment env) (cdr env))
 
@@ -42,43 +25,32 @@
           (error "Too many arguments supplied" vars vals)
           (error "Too few arguments supplied" vars vals))))
 
+(define (env-loop env var var-not-in-frame proc)
+  (define (scan vars vals)
+    (cond ((null? vars) (var-not-in-frame env))
+          ((eq? var (car vars)) (proc vals))
+          (else
+           (scan (cdr vars) (cdr vals)))))
+  (if (eq? env the-empty-environment)
+      (error "Unbound variable" var)
+      (let ((frame (first-frame env)))
+        (scan (frame-variables frame)
+              (frame-values frame)))))
+
 (define (lookup-variable-value var env)
-  (define (env-loop env)
-    (define (scan vars vals)
-      (cond ((null? vars)
-             (env-loop (enclosing-environment env)))
-            ((eq? var (car vars))
-             (car vals))
-            (else (scan (cdr vars) (cdr vals)))))
-    (if (eq? env the-empty-environment)
-        (error "Unbound variable" var)
-        (let ((frame (first-frame env)))
-          (scan (frame-variables frame)
-                (frame-values frame)))))
-  (env-loop env))
+  (define (var-not-in-frame env)
+    (lookup-variable-value var (enclosing-environment env)))
+  (env-loop env var var-not-in-frame car))
+
+(define (set-val! val)
+  (lambda (vals) (set-car! vals val)))
 
 (define (set-variable-value! var val env)
-  (define (env-loop env)
-    (define (scan vars vals)
-      (cond ((null? vars)
-             (env-loop (enclosing-environment env)))
-            ((eq? var (car vars))
-             (set-car! vals val))
-            (else (scan (cdr vars) (cdr vals)))))
-    (if (eq? env the-empty-environment)
-        (error "Unbound variable -- SET!" var)
-        (let ((frame (first-frame env)))
-          (scan (frame-variables frame)
-                (frame-values frame)))))
-  (env-loop env))
+  (define (var-not-in-frame env)
+    (set-variable-value! var val (enclosing-environment env)))
+  (env-loop env var var-not-in-frame (set-val! val)))
 
 (define (define-variable! var val env)
-  (let ((frame (first-frame env)))
-    (define (scan vars vals)
-      (cond ((null? vars)
-             (add-binding-to-frame! var val frame))
-            ((eq? var (car vars))
-             (set-car! vals val))
-            (else (scan (cdr vars) (cdr vals)))))
-    (scan (frame-variables frame)
-          (frame-values frame))))
+  (define (var-not-in-frame env)
+    (add-binding-to-frame! var val (first-frame env)))
+  (env-loop env var var-not-in-frame (set-val! val)))

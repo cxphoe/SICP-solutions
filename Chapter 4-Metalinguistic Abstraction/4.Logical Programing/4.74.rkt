@@ -9,5 +9,4 @@
 
 ;; b)
 ;; the procedure inside stream-operations will function the same as before
-;; even if we have change it into the above code. Because there are just
-;; some empty streams and streams with only one eltment in the stream.
+;; if we have change it into the above code.

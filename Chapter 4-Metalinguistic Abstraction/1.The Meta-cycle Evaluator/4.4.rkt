@@ -31,11 +31,11 @@
 
 (define (expand-and-predicates preds)
   (if (null? preds)
-      (make-if 'true 'true 'false)
+      'true
       (let ((first (car preds))
             (rest (cdr preds)))
         (if (null? rest)
-            (make-if first first false)
+            (make-if first first 'false)
             (make-if first
                      (expand-and-predicates rest)
                      'false))))

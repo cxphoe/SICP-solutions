@@ -3,13 +3,6 @@
 ;; make a copy of the original apply in the scheme
 (define apply-in-underlying-scheme apply)
 
-;; the analyze version of evaluator
-(define (eval exp env)
-  ((analyze exp) env))
-;; Procedure analyze applying to exp here return a execute procedure,
-;; which will be actived by a envrionment argument. It's more about
-;; improving the efficiency of the function calls.
-
 ;; evaluator for amb
 (define (ambeval exp env succeed fail)
   ((analyze exp) env succeed fail))

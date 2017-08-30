@@ -44,6 +44,9 @@
 (define (args exps) (cdr exps))
 
 ;; unique: (unique (?x ?y ?z))
+(define (unique? exp)
+  (tagged-list? exp 'unique))
+
 (define (single-stream? s)
   (and (not (null? s))
        (null? (stream-cdr s))))

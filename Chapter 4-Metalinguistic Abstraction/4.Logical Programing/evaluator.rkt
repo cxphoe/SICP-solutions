@@ -82,7 +82,7 @@
                         (conclusion clean-rule)
                         query-frame)))
       ;; bind the variables in rule's conclusion to the
-      ;; query-pattern's variables (unify-match).
+      ;; query-pattern's variables (unify-match)
       (if (eq? unify-result 'failed)
           the-empty-stream
           (qeval (rule-body clean-rule)
@@ -148,150 +148,17 @@
 
 ;; compound query
 ;;;; and
-(define (conjoin-o conjuncts frame-stream)
+; original conjoin implementation
+(define (conjoin conjuncts frame-stream)
   (if (null? conjuncts)
       frame-stream
       (conjoin (rest-conjuncts conjuncts)
                (qeval (first-conjunct conjuncts)
                       frame-stream))))
 
-(define (conjoin conjuncts frame-stream)
-  (conjoin-mix conjuncts '() frame-stream))
+;(load "4.77.rkt")
+(load "4.76.rkt")
 
-(define (conjoin-mix conjs delayed-conjs frame-stream)
-  (if (null? conjs)
-      (if (null? delayed-conjs)
-          frame-stream
-          the-empty-stream)
-      (let ((first (first-conjunct conjs)))
-        (cond ((or (lisp-value? first) (not? first))
-               (if (has-unbound-var? (contents first)
-                                     (stream-car frame-stream))
-                   (conjoin-mix (rest-conjuncts conjs)
-                                (cons first delayed-conjs)
-                                frame-stream)
-                   (conjoin-mix (rest-conjuncts conjs)
-                                delayed-conjs
-                                (qeval first frame-stream))))
-              (else
-               (let ((new-frame-stream (qeval first frame-stream)))
-                 (if (null? delayed-conjs)
-                     (conjoin-mix (rest-conjuncts conjs)
-                                  '()
-                                  new-frame-stream)
-                     (let ((res (conjoin-delayed delayed-conjs
-                                                 '()
-                                                 new-frame-stream)))
-                       (let ((d-conjs (car res))
-                             (f-stream (cdr res)))
-                         (conjoin-mix (rest-conjuncts conjs)
-                                      d-conjs
-                                      f-stream))))))))))
-      
-(define (conjoin-delayed delayed-conjs rest-conjs frame-stream)
-  (if (null? delayed-conjs)
-      (cons rest-conjs frame-stream)
-      (let ((first (first-conjunct delayed-conjs)))
-        (if (has-unbound-var? first (stream-car frame-stream))
-            (conjoin-delayed (cdr delayed-conjs)
-                             (cons first rest-conjs)
-                             frame-stream)
-            (conjoin-delayed (cdr delayed-conjs)
-                             rest-conjs
-                             (qeval first frame-stream))))))
-
-(define (has-unbound-var? exp frame)
-  (define (tree-walk exp)
-    (cond ((var? exp)
-           (let ((binding (binding-in-frame exp frame)))
-             (if binding
-                 (tree-walk (binding-value binding))
-                 true)))
-          ((pair? exp)
-           (or (tree-walk (car exp)) (tree-walk (cdr exp))))
-          (else false)))
-  (tree-walk exp))
-
-;; 4.76
-(define (conjoin-o conjuncts frame-stream)
-  (if (empty-conjunction? (rest-conjuncts conjuncts))
-      (qeval (first-conjunct conjuncts) frame-stream)
-      (merge (qeval (first-conjunct conjuncts) frame-stream)
-             (conjoin (rest-conjuncts conjuncts)
-                      frame-stream))))
-
-(define (merge frame-stream-1 frame-stream-2)
-  (stream-flatmap
-   (lambda (frame-1)
-     (stream-flatmap
-      (lambda (frame-2) (check-bindings frame-1 frame-2))
-      frame-stream-2))
-   frame-stream-1))
-
-(define (check-bindings frame-1 frame-2)
-  (let ((match-result
-         (merge-match frame-1 frame-2)))
-    (if (eq? match-result 'failed)
-        the-empty-stream
-        (singleton-stream match-result))))
-
-(define (merge-match frame-1 frame-2)
-  (define (iter f-1 f-2 res)
-    (if (null? f-1)
-        (append res f-2)
-        (let ((first (car f-1)))
-          (let ((match (binding-in-frame (binding-variable first) f-2)))
-            (if match
-                (let ((val1 (bind-final-value first frame-1))
-                      (val2 (bind-final-value match frame-2)))
-                  (cond ((and (has-var? val1) (not (has-var? val2)))
-                         (iter (cdr f-1)
-                               f-2
-                               (append (bind-pair-or-var val1 val2)
-                                       (cons first res))))
-                        ((and (not (has-var? val1)) (has-var? val2))
-                         (iter (cdr f-1)
-                               (append (bind-pair-or-var val2 val1)
-                                       f-2)
-                               (cons first res)))
-                        ((eq? val1 val2)
-                         (iter (cdr f-1) f-2 res))
-                        (else 'failed)))
-                (iter (cdr f-1) f-2 (cons first res)))))))
-  (iter frame-1 frame-2 '()))
-
-(define (bind-final-value bind frame)
-  (define (copy exp)
-    (cond ((var? exp)
-           (let ((binding (binding-in-frame exp frame)))
-             (if binding
-                 (copy (binding-value binding))
-                 exp)))
-          ((pair? exp)
-           (cons (copy (car exp)) (copy (cdr exp))))
-          (else exp)))
-  (copy (binding-value bind)))
-
-(define (has-var? exp)
-  (cond ((null? exp) false)
-        ((var? exp) true)
-        ((pair? exp)
-         (or (has-var? (car exp))
-             (has-var? (cdr exp))))
-        (else false)))
-
-(define (bind-pair-or-var var val)
-  ;; var can be (? 12 x) or (1 ? 12 x)
-  ;; or some more complex combination
-  (cond ((null? var) '())
-        ((var? var)
-         (list (cons var val)))
-        ((pair? var)
-         (let ((1st (bind-pair-or-var (car var) (car val))))
-           (if (not 1st)
-               (bind-pair-or-var (cdr var) (cdr val))
-               (append 1st (bind-pair-or-var (cdr var) (cdr val))))))
-        (else false)))
 
 ;;;; or
 (define (disjoin disjuncts frame-stream)
