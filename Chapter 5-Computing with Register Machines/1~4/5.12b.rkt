@@ -5,23 +5,29 @@
                     (update-insts! insts labels machine)
                     insts)))
 
+;-------------------------------update----------------------------------;
 (define (update-data! insts machine)
   (let ((inst-category (classify insts)))
-    (display (car inst-category))
     ((machine 'update-data) inst-category
                             (find-label-regs inst-category)
                             (find-stacked-regs inst-category)
                             (find-val-sources inst-category))))
 
+(define (filter proc seq)
+  (cond ((null? seq) '())
+        ((proc (car seq))
+         (cons (car seq) (filter proc (cdr seq))))
+        (else
+         (filter proc (cdr seq)))))
+
 ; classify the insts
 (define (classify insts)
   (let ((inst-category '()))
-    (for-each (lambda (inst)
-                (let ((cate (assoc (car inst) inst-category)))
+    (for-each (lambda (instruction)
+                (let* ((inst (instruction-text instruction))
+                       (cate (assoc (car inst) inst-category)))
                   (if cate
                       (let ((records (cdr cate)))
-                        (display records)
-                        (newline)
                         (if (not (memq inst records))
                             (set-cdr! cate (cons inst (cdr cate)))))
                       (set! inst-category
@@ -30,26 +36,14 @@
               insts)
     inst-category))
 
-(define (classify-insts category inst inst-category)
-  (let ((cate (assoc category inst-category)))
-    (if cate
-        (let ((records (cdr cate)))
-          (if (not (memq inst records))
-              (set-cdr! cate (cons inst (cdr cate)))))
-        (set! inst-category
-              (cons (list category inst)
-                    inst-category)))
-    inst-category))
-
 ; find registers that store entries
 (define (find-label-regs inst-category)
   (let ((label-registers '())
         (goto-insts (assoc 'goto inst-category)))
     (for-each (lambda (inst)
                 (let ((reg (cadr (cadr inst))))
-                  (if (not (memq reg labels))
-                      (set! label-registers (cons reg label-registers)))
-                  'done))
+                  (if (not (memq reg label-registers))
+                      (set! label-registers (cons reg label-registers)))))
               (filter (lambda (inst)
                         (register-exp? (cadr inst)))
                       (cdr goto-insts)))
@@ -65,10 +59,9 @@
                 (let ((reg-name (cadr inst)))
                   (if (not (memq reg-name stacked-regs))
                       (set! stacked-regs
-                            (cons reg-name stacked-regs)))
-                  'done))
+                            (cons reg-name stacked-regs)))))
               stack-insts)
-    stacked-insts))
+    stacked-regs))
 
 ; find sources of registers' values
 (define (find-val-sources inst-category)
@@ -84,30 +77,62 @@
                                       (cons source (cdr val-seq))))
                         (set! val-sources
                               (cons (list reg-name source)
-                                    val-sources)))
-                    'done)))
+                                    val-sources))))))
               (cdr assign-insts))
     val-sources))
+
+; for presentation of collected data
+(define (display-newline str)
+  (display str)
+  (newline))
+(define (show-data cate lregs sregs sources)
+  (display-newline "Instruction category:")
+  (for-each (lambda (record)
+              (display "  ")
+              (display (car record))
+              (display-newline ":")
+              (for-each (lambda (inst)
+                          (display "    ")
+                          (display-newline inst))
+                        (cdr record)))
+            cate)
+  (newline)
+  (display-newline "Entry register:")
+  (display "  ")
+  (display-newline lregs)
+  (newline)
+  (display-newline "Stacked registers:")
+  (display "  ")
+  (display-newline sregs)
+  (newline)
+  (display-newline "Register value source:")
+  (for-each (lambda (record)
+              (display "  ")
+              (display (car record))
+              (display-newline ": ")
+              (for-each (lambda (source)
+                          (display "    ")
+                          (display-newline source))
+                        (cdr record)))
+            sources))
 
 ;-------------------------------------------------------------------------;
 
 (define (extract-labels text receive)
   (if (null? text)
       (receive '() '())
-      (extract-labels (cdr text)
-                      (lambda (insts labels)
-                        (let ((next-inst (car text)))
-                          (if (symbol? next-inst)
-                              (if (assoc next-inst labels)
-                                  (error "Multiple used label: " next-inst)
-                                  (receive insts
-                                           (cons (make-label-entry
-                                                  next-inst
-                                                  insts)
-                                                 labels)))
-                              (receive (cons (make-instruction next-inst)
-                                             insts)
-                                       labels)))))))
+      (extract-labels
+       (cdr text)
+       (lambda (insts labels)
+         (let ((next-inst (car text)))
+           (if (symbol? next-inst)
+               (if (assoc next-inst labels)
+                   (error "Multiple used label: " next-inst)
+                   (receive insts
+                            (cons (make-label-entry next-inst insts)
+                                  labels)))
+               (receive (cons (make-instruction next-inst) insts)
+                        labels)))))))
 
 (define (update-insts! insts labels machine)
   (let ((pc (get-register machine 'pc))

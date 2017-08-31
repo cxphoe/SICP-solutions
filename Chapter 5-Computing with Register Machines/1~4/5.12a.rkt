@@ -1,11 +1,5 @@
 (load "5.12b.rkt")
-
-(define (filter proc seq)
-  (cond ((null? seq) '())
-        ((proc (car seq))
-         (cons (car seq) (filter proc (cdr seq))))
-        (else
-         (filter proc (cdr seq)))))
+; most of the answer is implemented in 5.12b.rkt
 
 ;; machine implementation
 (define (make-new-machine)
@@ -52,40 +46,6 @@
         (set! stacked-regs sregs)
         (set! register-val-source sources)
         'finished)
-      ; for presentation of collected data
-      (define (display-newline str)
-        (display str)
-        (newline))
-      (define (show-data)
-        (display-newline "Instruction category:")
-        (for-each (lambda (record)
-                    (display "  ")
-                    (display (car record))
-                    (display-newline ":")
-                    (for-each (lambda (inst)
-                                (display "    ")
-                                (display-newline inst))
-                              (cdr record)))
-                  instruction-category)
-        (newline)
-        (display-newline "Entry register:")
-        (display "  ")
-        (display-newline labels)
-        (newline)
-        (display-newline "Stacked registers:")
-        (display "  ")
-        (display-newline stacked-register)
-        (newline)
-        (display-newline "Register value source:")
-        (for-each (lambda (record)
-                    (display "  ")
-                    (display (car record))
-                    (display-newline ": ")
-                    (for-each (lambda (source)
-                                (display "    ")
-                                (display-newline source))
-                              (cdr record)))
-                  register-val-source))
       ;------------------------------------------------;
       (define (dispatch message)
         (cond ((eq? message 'start)
@@ -102,7 +62,10 @@
               ((eq? message 'operations) the-ops)
               ;---------------------update--------------------;
               ((eq? message 'update-data) update-data)
-              ((eq? message 'show-data) (show-data))
+              ((eq? message 'show-data) (show-data instruction-category
+                                                   label-regs
+                                                   stacked-regs
+                                                   register-val-source))
               ;-----------------------------------------------;
               (else (error "Unknown request -- MACHINE" message))))
       dispatch)))
@@ -131,7 +94,6 @@
     ((machine 'install-operations) ops)
     ((machine 'install-instruction-sequence)
      (assemble controller-text machine))
-    ((machine 'update-data) controller-text)        ; add
     machine))
 
 ;; register implementation
