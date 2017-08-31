@@ -1,4 +1,5 @@
 (load "5.12b.rkt")
+; the change has been marked
 ; most of the answer is implemented in 5.12b.rkt
 
 ;; machine implementation
@@ -22,10 +23,9 @@
       (define (allocate-register name)
         (if (assoc name register-table)
             (error "Multiple defined register: " name)
-            (begin (add stack name)                  
-                   (set! register-table
-                         (cons (list name (make-register name))
-                               register-table))))
+            (set! register-table
+                  (cons (list name (make-register name))
+                        register-table)))
         'register-allocated)
       (define (lookup-register name)
         (let ((val (assoc name register-table)))
@@ -116,37 +116,26 @@
 ;; stack implementation
 (define (make-stack)
   (let ((s '()))
-    (define (push reg-name val)                   
-      (let ((reg-stack (assoc reg-name s)))       
-        (set-cdr! reg-stack                       
-                  (cons val (cdr reg-stack)))))
-    (define (pop reg-name)
-      (let ((reg-stack (assoc reg-name s)))
-        (if (null? (cdr reg-stack))
-            (error "Empty stack -- POP" (car reg))
-            (let ((top (cadr reg-stack)))
-              (set-cdr! reg-stack (cddr reg-stack))
-              top))))
-    (define (add reg-name)                       
-      (set! s (cons (list reg-name) s)))         
+    (define (push x)                   
+      (set! s (cons x s)))
+    (define (pop)
+      (if (null? s)
+          (error "Empty stack -- POP")
+          (let ((top (car s)))
+            (set! s (cdr s))
+            top)))    
     (define (initialize)
-      (for-each (lambda (stack)
-                  (set-cdr! stack '()))
-                s)
+      (set! s '())
       'done)
     (define (dispatch message)
       (cond ((eq? message 'push) push)
-            ((eq? message 'pop) pop)
-            ((eq? message 'add) add)             
+            ((eq? message 'pop) (pop))
             ((eq? message 'initialize) (initialize))
             (else (error "Unknown request -- STACK" message))))
     dispatch))
 
-(define (pop stack reg-name)
-  ((stack 'pop) reg-name))
+(define (pop stack)
+  (stack 'pop))
 
-(define (push stack reg-name val)
-  ((stack 'push) reg-name val))
-
-(define (add stack reg-name)                     
-  ((stack 'add) reg-name))                      
+(define (push stack value)
+  ((stack 'push) value))                    

@@ -280,18 +280,18 @@
 ;; registers. so the order of save and restore should be considered
 ;; carefully
 (define (make-save inst machine stack pc)
-  (let ((reg-name (stack-inst-reg-name inst)))
-    (let ((reg (get-register machine reg-name)))
-      (lambda ()
-        (push stack reg-name (get-contents reg))
-        (advance-pc pc)))))
+  (let* ((reg-name (stack-inst-reg-name inst))
+         (reg (get-register machine reg-name)))
+    (lambda ()
+      (push stack (get-contents reg))
+      (advance-pc pc))))
 
 (define (make-restore inst machine stack pc)
-  (let ((reg-name (stack-inst-reg-name inst)))
-    (let ((reg (get-register machine reg-name)))
-      (lambda ()
-        (set-contents! reg (pop stack reg-name))
-        (advance-pc pc)))))
+  (let* ((reg-name (stack-inst-reg-name inst))
+         (reg (get-register machine reg-name)))
+    (lambda ()
+      (set-contents! reg (pop stack))
+      (advance-pc pc))))
 
 ;;;; (save <name>) and
 ;;;; (restore <name>) and
