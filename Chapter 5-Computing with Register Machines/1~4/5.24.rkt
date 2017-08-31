@@ -1,7 +1,34 @@
+; SICP exercise 5.24
+;
+; implement Derived expression such as "cond" and "let".
+
+; I just found out the machine model's extra features that are asked
+; to implement in the previous exercises help me a lot in debug this
+; machine.
+
+(load "ev-operations/expression.rkt")
+(load "ev-operations/environment.rkt")
+(load "ev-operations/loop-setup.rkt")
+(load "ev-operations/ev-operations.rkt")
+(load "machine-model.rkt")
+
 (define eval-machine
   (make-machine
-   (list)
-   '(eval-dispatch
+   eceval-operations
+   '(read-eval-print-loop
+       (perform (op initialize-stack))
+       (perform
+        (op prompt-for-input) (const ";;; EC-Eval input:"))
+       (assign exp (op read))
+       (assign env (op get-global-environment))
+       (assign continue (label print-result))
+       (goto (label eval-dispatch))
+     print-result
+       (perform
+        (op announce-output) (const ";;; EC-Eval value:"))
+       (perform (op user-print) (reg val))
+       (goto (label read-eval-print-loop))
+     eval-dispatch
        (test (op self-evaluating?) (reg exp))
        (branch (label ev-self-eval))
        (test (op variable?) (reg exp))
@@ -83,7 +110,7 @@
      ev-appl-accum-last-arg
        (restore argl)
        (assign argl (op adjoin-arg) (reg val) (reg argl))
-       (restroe proc)
+       (restore proc)
        (goto (label apply-dispatch))
        
      apply-dispatch
@@ -102,12 +129,12 @@
        (assign unev (op procedure-parameters) (reg proc))
        (assign env (op procedure-environment) (reg proc))
        (assign env (op extend-environment)
-                   (reg unev) (reg argl) (reg proc))
+                   (reg unev) (reg argl) (reg env))
        (assign unev (op procedure-body) (reg proc))
        (goto (label ev-sequence))
        
      ev-begin
-       (assign unev (op begin-action) (reg exp))
+       (assign unev (op begin-actions) (reg exp))
        (save continue)
        (goto (label ev-sequence))
        
@@ -118,7 +145,7 @@
        (save unev)
        (save env)
        (assign continue (label ev-sequence-continue))
-       (goto (label eval-sequence))
+       (goto (label eval-dispatch))
      ev-sequence-continue
        (restore env)
        (restore unev)
@@ -138,7 +165,7 @@
      ev-if-decide
        (restore continue)
        (restore env)
-       (restroe exp)
+       (restore exp)
        (test (op true?) (reg val))
        (branch (label ev-if-consequent))
      ev-if-alternative
@@ -181,7 +208,7 @@
         (op define-variable!) (reg unev) (reg val) (reg env))
        (assign val (const ok))
        (goto (reg continue))
-       
+     ;-------------------------add------------------------;
      ev-cond
        (assign unev (op cond-clauses) (reg exp))
        (save continue)                ; save the entry
@@ -207,7 +234,7 @@
        (assign unev (op rest-clauses) (reg unev))
        (goto (label ev-clauses))
      ev-cond-clause-actions
-       (assign exp (op cond-actions) (reg exp))
+       (assign unev (op cond-actions) (reg exp))
        (goto (label ev-sequence))
      ev-cond-done
        (goto (reg continue))
@@ -225,5 +252,25 @@
        (save unev)
        (goto (label ev-appl-did-operator))
        ; the rest is the same with ev-application
-       
+     ;----------------------------------------------------;
+     unknown-expression-type
+       (assign val (const unknown-expression-type-error))
+       (goto (label signal-error))
+     unknown-procedure-type
+       (restore continue)
+       (assign val (const unknown-procedure-type-error))
+       (goto (label signal-error))
+
+     signal-error
+       (perform (op user-print) (reg val))
+       (goto (label read-eval-print-loop))
      )))
+
+(define (show name)
+  (display (get-register-contents eval-machine name)))
+
+;(trace-on eval-machine)
+;(trace-register eval-machine 'exp)
+;(set-breakpoint eval-machine 'print-result 1)
+
+(start eval-machine)
