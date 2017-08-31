@@ -1,4 +1,4 @@
-(loaf "5.16.rkt")
+(load "5.16.rkt")
 
 ; change the syntactic forms of instruction:
 ; add a empty list to store label
