@@ -80,14 +80,22 @@
         (let ((insts (get-contents pc)))
           (if (null? insts)
               'done
-              (begin
-                ;--------------changed-------------;
+              ;--------------changed-------------;
+              (let ((first (car insts)))
                 (if trace-mode
-                    (begin (display (car (car insts)))
-                           (newline)))
-                ;----------------------------------;
-                ((instruction-execution-proc (car insts)))
+                    (let ((label (instruction-label first))
+                          (text (instruction-text first)))
+                      (if (not (null? label))
+                          (begin (display "(LABEL): ")
+                                 (display label)
+                                 (display ":")
+                                 (newline)))
+                      (display "  ")
+                      (display text)
+                      (newline)))
+                ((instruction-execution-proc first))
                 (set! executed-number (+ executed-number 1))
+                ;----------------------------------;
                 (execute)))))
       (define (dispatch message)
         (cond ((eq? message 'start)
