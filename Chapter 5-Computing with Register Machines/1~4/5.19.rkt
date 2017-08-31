@@ -18,7 +18,14 @@
   (set-car! (cdr inst) proc))
 
 (define (set-break! inst breakpoint)
-  (set-car! (cddr inst) breakpoint))
+  (if (instruction-breakpoint inst)
+      (error "breakpoint already exists! -- SET-BREAK")
+      (set-car! (cddr inst) breakpoint)))
+
+(define (cancel-break! inst)
+  (if (instruction-breakpoint inst)
+      (set-car! (cddr inst) false)
+      (error "can't cancel non-breakpoint inst -- CANCEL-BREAK")))
 
 ;----------------------------------------------------;
 
@@ -109,20 +116,24 @@
         ((instruction-execution-proc next-inst))
         (execute))
       ;----------------------------add-----------------------------;
-      (define (breakpoint-op label-name offset content)
+      (define (search-inst label-name offset)
         (let ((insts (lookup-label labels label-name)))
-          (if (> (+ offset 1) (length insts))
-              (error "not enough instructions -- BREAKPOINT")
-              (set-break! (list-ref insts offset) content))
-          'done))
+          ; do not need to check if label exist, the lookup-label
+          ; will do this job for us
+          (cond ((> (+ offset 1) (length insts))
+                 (error "amount of instructions less than" offset))
+                (else (list-ref insts offset)))))
       (define (set-breakpoint label-name offset)
-        (breakpoint-op label-name offset
-                       (list label-name offset)))
+        (set-break! (search-inst label-name offset)
+                    (list label-name offset))
+        'done)
       (define (cancel-breakpoint label-name offset)
-        (breakpoint-op label-name offset false))
+        (cancel-break! (search-inst label-name offset))
+        'done)
       (define (cancel-all-breakpoints)
         (for-each (lambda (inst)
-                    (set-break! inst false))
+                    (if (instruction-breakpoint inst)
+                        (cancel-break! inst)))
                   the-instruction-sequence)
         'done)
       (define (show-breakpoint breakpoint text)
