@@ -98,9 +98,38 @@
   (start fib-machine)
   (get-register-contents fib-machine 'val))
 
-; for 5.19
-;(set-breakpoint fib-machine 'controller 1)
-;(set-breakpoint fib-machine 'afterfib-n-2 10)
-;(set-breakpoint fib-machine 'afterfib-n-1 5)
-;(set-breakpoint fib-machine 'fib-loop 10)
+(define (test-5.19)
+  (load "5.19.rkt")
+  (define fib-machine (fib-machine-without-regs))
+  (set-breakpoint fib-machine 'afterfib-n-1 2)
+  (set-register-contents! fib-machine 'n 10)
+  (define (process)
+    (proceed-machine fib-machine)
+    (show fib-machine 'n)
+    (show fib-machine 'val))
 
+  ;(proceed-machine fib-machine)
+  ; check if the machine would report an error when there
+  ; is no interrupted instruction
+  (start fib-machine)
+  (show fib-machine 'n)
+  (show fib-machine 'val)
+  (circle process 4)
+  (cancel-all-breakpoints fib-machine)
+  (proceed-machine fib-machine)
+  (display " ... ")
+  (newline)
+  (show fib-machine 'val)
+  ;(proceed-machine fib-machine)
+  )
+
+(define (circle process times)
+  (if (> times 0)
+      (begin (process)
+             (circle process (- times 1)))))
+
+(define (show machine reg)
+  (display reg)
+  (display ": ")
+  (display (get-register-contents machine reg))
+  (newline))
