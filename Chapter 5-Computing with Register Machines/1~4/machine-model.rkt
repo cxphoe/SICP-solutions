@@ -1,5 +1,11 @@
 (load "assembler.rkt")
 
+(define (filter proc seq)
+  (cond ((null? seq) '())
+        ((proc (car seq))
+         (cons (car seq) (filter proc (cdr seq))))
+        (else (filter proc (cdr seq)))))
+
 ;; machine implementation
 (define (make-new-machine)
   (let ((pc (make-register 'pc))
@@ -8,8 +14,8 @@
         (the-instruction-sequence '())
         (executed-number 0)               ; for counting the instructions
         (trace-mode false)                ; for trace mode
-        (breakpoints '())                 ; for break point system
-        (counters '()))                   ;
+        (labels '())                      ; for break point system
+        (interrupted-inst false))         ;
     (let ((the-ops
            (list (list 'initialize-stack
                        (lambda () (stack 'initialize)))
@@ -40,84 +46,65 @@
         (let ((insts (get-contents pc)))
           (if (null? insts)
               'done
-              (let ((first (car insts)))
-                ; chenk the trace-mode, if true, trace the instructions
+              (let* ((next-inst (car insts))
+                     (breakpoint (instruction-breakpoint next-inst)))
+                ; check the trace-mode, if true, trace the instructions
                 (if trace-mode
-                    (let ((label (instruction-label first))
-                          (text (instruction-text first)))
-                      (if (not (null? label))
-                          (begin (display label)
-                                 (display ":")
-                                 (newline)))
-                      (display "  ")
-                      (display text)
-                      (newline)))
-                ; for breakpoints
-                (if (not (null? breakpoints))
-                    (let ((label (instruction-label first)))
-                      (if (not (null? label))
-                          (split label breakpoints '() '()))))
-
-                (update)
-                (if (or (null? counters)
-                        (> (cdar counters) 0))
-                    (begin
-                      ((instruction-execution-proc first))
-                      (set! executed-number
-                            (+ executed-number 1))
-                      (execute))
-                    (begin (display (caar counters))
-                           (set! counters (cdr counters))
-                           (display ": ")
-                           (display (instruction-text first))))))))
-
-      (define (split label bps bp ct)
-        (cond ((null? bps)
-               (set! breakpoints bp)
-               (set! counters (merge counters
-                                    (map (lambda (x)
-                                           (cons x (cadr x)))
-                                         ct))))
-              ((eq? (caar bps) label)
-               (split label (cdr bps) bp (cons (car bps) ct)))
-              (else
-               (split label (cdr bps) (cons (car bps) bp) ct))))
-      (define (merge seq1 seq2)
-        (cond ((null? seq1) seq2)
-              ((null? seq2) seq1)
-              (else
-               (merge (order-insert seq1 (car seq2))
-                      (cdr seq2)))))
-      (define (order-insert seq elt)
-        (cond ((null? seq) (list elt))
-              ((< (cdr elt) (cdar seq))
-               (cons elt seq))
-              (else
-               (order-insert (cdr seq) elt))))
-      (define (update)
-        (for-each (lambda (c)
-                    (set-cdr! c (- (cdr c) 1)))
-                  counters))
-             
-      (define (filter proc seq)
-        (cond ((null? seq) '())
-              ((proc (car seq))
-               (cons (car seq) (filter proc (cdr seq))))
-              (else (filter proc (cdr seq)))))
-      (define (remove-from-breakpoints seq elt)
-        (if (null? seq)
-            '()
-            (cond ((equal? elt (car seq))
-                   (cdr seq))
-                  (else (cons (car seq)
-                              (remove-from-breakpoints (cdr seq) elt))))))
-      (define (remove-from-counters seq elt)
-        (if (null? seq)
-            '()
-            (cond ((equal? (caar seq) elt)
-                   (cdr seq))
-                  (else (cons (car seq)
-                              (remove-from-counters (cdr seq) elt))))))
+                    (let ((label (instruction-label next-inst))
+                          (text (instruction-text next-inst)))
+                      (print-text label text)))
+                (if breakpoint
+                    (begin (show-breakpoint breakpoint)
+                           (set! interrupted-inst next-inst))
+                    (continue next-inst))))))
+      
+      (define (continue next-inst)
+        ((instruction-execution-proc next-inst))
+        (set! executed-number (+ executed-number 1))
+        (execute))
+      
+      (define (print-text label text)
+        (if (not (null? label))
+            (begin (display "(TRACE) ")
+                   (display label)
+                   (display ":")
+                   (newline)))
+        (display "  ")
+        (display text)
+        (newline))
+      ;-----------------------breakpoint---------------------------;
+      (define (search-inst label-name offset)
+        (let ((insts (lookup-label labels label-name)))
+          ; do not need to check if label exist, the lookup-label
+          ; will do this job for us
+          (cond ((> (+ offset 1) (length insts))
+                 (error "amount of instructions less than" offset))
+                (else (list-ref insts offset)))))
+      (define (set-breakpoint label-name offset)
+        (set-break! (search-inst label-name offset)
+                    (list label-name offset))
+        'done)
+      (define (cancel-breakpoint label-name offset)
+        (cancel-break! (search-inst label-name offset))
+        'done)
+      (define (cancel-all-breakpoints)
+        (for-each (lambda (inst)
+                    (if (instruction-breakpoint inst)
+                        (cancel-break! inst)))
+                  the-instruction-sequence)
+        'done)
+      (define (show-breakpoint breakpoint)
+        (display "BREAKPOINT ")
+        (display breakpoint)
+        (display ": ")
+        (newline))
+      (define (proceed)
+        (if interrupted-inst
+            (let ((next-inst interrupted-inst))
+              (set! interrupted-inst false)
+              (continue next-inst))
+            (error "execution done! -- PROCEED")))
+      ;------------------------------------------------------------;
       
       (define (dispatch message)
         (cond ((eq? message 'start)
@@ -137,40 +124,25 @@
               ; trace on and trace off
               ((eq? message 'trace-on) (set! trace-mode true))
               ((eq? message 'trace-off) (set! trace-mode false))
-              ((eq? message 'set-trace-label)
-               (lambda (val) (set! trace-label val)))
               ; for breakpoint
-              ((eq? message 'set-breakpoint!)
-               (lambda (label n)
-                 (set! breakpoints
-                       (cons (list label n)
-                             breakpoints))
-                 'done))
-              ((eq? message 'cancel-breakpoint)
-               (lambda (label n)
-                 (set! breakpoints
-                       (remove-from-breakpoints breakpoints
-                                                (cons label n)))
-                 (set! counters
-                       (remove-from-counters counters
-                                             (cons label n)))
-                 'done))
+              ((eq? message 'install-labels)
+               (lambda (ls) (set! labels ls)))
+              ((eq? message 'set-breakpoint) set-breakpoint)
+              ((eq? message 'cancel-breakpoint) cancel-breakpoint)
               ((eq? message 'cancel-all-breakpoints)
-               (set! breakpoints '())
-               (set! counters '())
-               'done)
-              ((eq? message 'proceed) (execute))
+               (cancel-all-breakpoints))
+              ((eq? message 'proceed) (proceed))
               (else (error "Unknown request -- MACHINE" message))))
       dispatch)))
 
 (define (start machine)
   (machine 'start))
 
-(define (set-breakpoint machine label n)
-  ((machine 'set-breakpoint!) label n))
+(define (set-breakpoint machine label offset)
+  ((machine 'set-breakpoint) label offset))
 
-(define (cancel-breakpoint machine label n)
-  ((machine 'cancel-breakpoint) label n))
+(define (cancel-breakpoint machine label offset)
+  ((machine 'cancel-breakpoint) label offset))
 
 (define (cancel-all-breakpoints machine)
   (machine 'cancel-all-breakpoints))
@@ -191,7 +163,7 @@
 (define (trace-register machine reg-name)
   (trace-on (get-register machine reg-name)))
 
-(define (no-trace-register machine reg-name)
+(define (cancel-trace-register machine reg-name)
   (trace-off (get-register machine reg-name)))
 
 (define (make-machine ops controller-text)

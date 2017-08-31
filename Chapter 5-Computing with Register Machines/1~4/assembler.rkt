@@ -29,6 +29,7 @@
         (flag (get-register machine 'flag))
         (stack (machine 'stack))
         (ops (machine 'operations)))
+    ((machine 'install-labels) labels)
     (for-each
      (lambda (inst)
        (set-instruction-execution-proc!
@@ -39,8 +40,9 @@
      insts)))
 
 ;; instruction
+;;;; inst: (text label procedure breakpoint)
 (define (make-instruction text)
-  (list text '()))
+  (list text '() '() false))
 
 (define (instruction-text inst)
   (car inst))
@@ -49,12 +51,24 @@
   (cadr inst))
 
 (define (instruction-execution-proc inst)
-  (cddr inst))
+  (caddr inst))
 
 (define (set-instruction-execution-proc! inst proc)
-  (set-cdr! (cdr inst) proc))
+  (set-car! (cddr inst) proc))
 ; the insts in the label entry will also change
 
+(define (instruction-breakpoint inst)
+  (cadddr inst))
+
+(define (set-break! inst breakpoint)
+  (if (instruction-breakpoint inst)
+      (error "breakpoint already exists! -- SET-BREAK")
+      (set-car! (cdddr inst) breakpoint)))
+
+(define (cancel-break! inst)
+  (if (instruction-breakpoint inst)
+      (set-car! (cdddr inst) false)
+      (error "can't cancel non-breakpoint inst -- CANCEL-BREAK")))
 ;; label
 (define (make-label-entry label-name insts)
   (cons label-name insts))
