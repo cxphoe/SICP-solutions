@@ -6,6 +6,7 @@
         (flag (make-register 'flag))
         (stack (make-stack))
         (the-instruction-sequence '())
+        ;-----------add----------'
         (trace-mode false))
     (let ((the-ops
            (list (list 'initialize-stack
