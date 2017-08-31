@@ -1,9 +1,10 @@
-(load "5.12a.rkt")
+;(load "5.12a.rkt")
+(load "5.13.rkt")
 ;(load "machine-model.rkt")
 
 (define fib-machine
   (make-machine
-   (list 'val 'n 'continue)
+   ;(list 'val 'n 'continue)
    (list (list '= =) (list '- -) (list '+ +) (list '< <))
    '(controller
        (assign continue (label fib-done))
