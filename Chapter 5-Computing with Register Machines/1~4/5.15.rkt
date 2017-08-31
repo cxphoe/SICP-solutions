@@ -29,13 +29,11 @@
               (begin (allocate-register name)
                      (lookup-register name)))))
       ;-------------------------add----------------------;
-      (define (reset-executed-number)
-        (set! executed-number 0))
       (define (print-executed-number)
         (display "Instruction count value: ")
         (display executed-number)
         (newline)
-        (reset-executed-number))
+        (set! executed-number 0))
       (set! the-ops (cons (list 'print-instruction-count
                                 (lambda () (print-executed-number)))
                           the-ops))
@@ -60,8 +58,10 @@
                (lambda (ops) (set! the-ops (append the-ops ops))))
               ((eq? message 'stack) stack)
               ((eq? message 'operations) the-ops)
+              ;--------------------add-------------------;
               ((eq? message 'print-instruction-count-value)
                (print-executed-number))
+              ;------------------------------------------;
               (else (error "Unknown request -- MACHINE" message))))
       dispatch)))
 

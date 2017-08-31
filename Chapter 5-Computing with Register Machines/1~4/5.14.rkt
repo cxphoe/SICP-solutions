@@ -8,9 +8,8 @@
                         (display x) (newline))))
    '(controller
      fact-loop
-       (assign n (op read))
+       (assign n (op read))                   ; add
        (assign continue (label fact-done))
-       (perform (op print-instruction-count))
      test-n
        (test (op =) (reg n) (const 1))
        (branch (label base-case))
@@ -29,6 +28,7 @@
        (goto (reg continue))
      fact-done
        (perform (op print) (reg val))
+       (perform (op print-instruction-count)) ; add for 5.15.rkt
        (goto (label fact-loop)))))
 
 (start fact-machine)
