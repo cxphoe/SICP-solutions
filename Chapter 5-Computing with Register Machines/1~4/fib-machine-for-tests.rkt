@@ -101,7 +101,15 @@
 (define (test-5.19)
   (load "5.19.rkt")
   (define fib-machine (fib-machine-without-regs))
+  
   (set-breakpoint fib-machine 'afterfib-n-1 2)
+  (set-breakpoint fib-machine 'afterfib-n-2 2)
+  ;(set-breakpoint fib-machine 'afterfib-n-2 2)
+  ;(set-breakpoint fib-machine 'text 10)
+  ;(set-breakpoint fib-machine 'afterfib-n-2 20)
+  ;(cancel-breakpoint fib-machine 'fib-loop 2)
+  ;; check illegal breakpoints
+  
   (set-register-contents! fib-machine 'n 10)
   (define (process)
     (proceed-machine fib-machine)
@@ -109,12 +117,13 @@
     (show fib-machine 'val))
 
   ;(proceed-machine fib-machine)
-  ; check if the machine would report an error when there
-  ; is no interrupted instruction
+  ;; check if the machine would report an error when there
+  ;; is no interrupted instruction
+
   (start fib-machine)
   (show fib-machine 'n)
   (show fib-machine 'val)
-  (circle process 4)
+  (circle process 8)
   (cancel-all-breakpoints fib-machine)
   (proceed-machine fib-machine)
   (display " ... ")
