@@ -1,37 +1,30 @@
-(define (construct-arglist operand-codes)
-  (if (null? operand-codes)
-      (make-instruction-sequence '() '(argl)
-                                 '((assign argl (const ()))))
-      (if (null? (cdr operand-codes))
-          (append-instructoin-sequences
-           (car operands-codes)
-           (make-instruction-sequence
-            '(val)
-            '(argl)
-            '((assign argl (op list) (reg val)))))
-          (preserving '(env)
-                      (append-instruction-sequences
-                       (car operands-codes)
-                       (make-instruction-sequence
-                        '(val)
-                        '(argl)
-                        '((assign argl (reg val)))))
-                      (code-to-get-rest-args (cdr operand-codes))))))
+; SICP exercise 5.36
+;
+; Inspect the evaluating order of expression'operands, and find a way to
+; change it.
 
-(define (code-to-get-args operand-codes)
-  (if (null? (cdr operand-codes))
-      (append-instruction-sequences
-       (car operand-codes)
-       (make-instruction-sequence
-        '(val) '(argl)
-        '((assign argl (op list) (reg val)))))
-      (let ((code-for-next-arg
-             (preserving '(argl)
-                         (car operand-codes)
-                         (make-instruction-sequence
-                          '(val argl) '(argl)
-                          '((assign argl
-                                    (op cons) (reg argl) (reg val)))))))
-        (preserving '(env)
-                    code-for-next-arg
-                    (code-to-get-args (cdr operand-codes))))))
+; The evaluation order is based on two procedure: construct-arglist and
+; code-to-get-rest-args.
+
+; I am not gonna implement another definition which has a left-to-right
+; order. The basic idea is clear: don't reverse the operand-codes and
+; operate append or reverse on the argl in the run time.
+;
+; But there is an issue with it.
+;
+; the implementation of construct-arglist in the textbook reverse the
+; operands in the compiling process, and just use cons the build up the
+; argl. If we didn't reverse the operands in construct-arglist, and set
+; up instruction sequence like:
+;
+;   (assign val (op list) (reg val))
+;   (assign argl (op append) (reg argl) (reg val))
+;
+; after each evaluation of arguments, or set up
+;
+;   ((assign argl (op reverse) (reg argl))
+;
+; after finishing the evaluation of whole arguments list.
+; But as we know the cost of append and reverse is more than cons, which
+; means there will be some loss in efficiency in the run time.
+
