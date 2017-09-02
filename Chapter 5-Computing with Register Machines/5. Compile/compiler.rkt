@@ -314,7 +314,7 @@
                       (reg proc))
               (goto (reg val))
               ,proc-return
-              (assign target (reg val))
+              (assign ,target (reg val))
               (goto (label ,linkage))))))
         ((and (eq? target 'val) (eq? linkage 'return))
          (make-instruction-sequence '(proc continue) all-regs
