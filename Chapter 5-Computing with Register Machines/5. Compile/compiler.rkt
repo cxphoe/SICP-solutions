@@ -3,12 +3,14 @@
 (load "compiler-label.rkt")
 (load "compiler-lexical-address.rkt")
 (load "compiler-open-code.rkt")
+(load "scan-out-defines.rkt")
 
 ; log:
 ; >> an original compiler
-; >> add implementation about open code in ex-5.38
-; >> add implementation about lexical address in ex-5.39 ~ ex-5.44
+; >> adopt implementation about open code in ex-5.38
+; >> adopt implementation about lexical address in ex-5.39 ~ ex-5.44
 ;    and change the implementation about open code
+; >> adopt implementation of scan-out-defines
 
 (define (test text)
   (for-each (lambda (x)
@@ -30,8 +32,10 @@
          (compile-assignment exp target linkage compile-env))
         ((definition? exp)
          (compile-definition exp target linkage compile-env))
-        ((if? exp) (compile-if exp target linkage))
-        ((lambda? exp) (compile-lambda exp target linkage compile-env))
+        ((if? exp)
+         (compile-if exp target linkage compile-env))
+        ((lambda? exp)
+         (compile-lambda exp target linkage compile-env))
         ((begin? exp)
          (compile-sequence (begin-actions exp) target linkage compile-env))
         ((cond? exp) (compile (cond->if exp) target linkage compile-env))
@@ -86,7 +90,7 @@
 (define (compile-assignment exp target linkage compile-env)
   (let* ((var (assignment-variable exp))
          (get-value-code
-          (compile (assignment-value exp) 'val 'next))
+          (compile (assignment-value exp) 'val 'next compile-env))
          (address (find-variable var compile-env))
          (op 'set-variable-value!))
     (if (not (eq? address 'not-found))
@@ -104,10 +108,11 @@
 
 ; define
 (define (compile-definition exp target linkage compile-env)
-  ; <implementation about extend compile-env will be added here>
+  ; the interval definition was transformed, so definition don't
+  ; to extend compile-env
   (let ((var (definition-variable exp))
         (get-value-code
-         (compile (definition-value exp) 'val 'next)))
+         (compile (definition-value exp) 'val 'next compile-env)))
     (end-with-linkage linkage
      (preserving '(env)
       get-value-code
@@ -159,7 +164,7 @@
       (compile (first-exp seq) target linkage compile-env)
       (preserving '(env continue)
        (compile (first-exp seq) target 'next compile-env)
-       (compile-sequence (rest-exps seq) target linkage) compile-env)))
+       (compile-sequence (rest-exps seq) target linkage compile-env))))
 
 ; complied procedure
 (define (make-compiled-procedure entry env)
@@ -203,7 +208,8 @@
                 (const ,formals)
                 (reg argl)
                 (reg env))))
-     (compile-sequence (lambda-body exp) 'val 'return
+     (compile-sequence (scan-out-defines (lambda-body exp))
+                       'val 'return
                        (cons formals compile-env)))))
 
 (define (compile-application exp target linkage compile-env)
