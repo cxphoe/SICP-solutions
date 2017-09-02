@@ -46,8 +46,10 @@
          (compile-assignment exp target linkage compile-env))
         ((definition? exp)
          (compile-definition exp target linkage compile-env))
-        ((if? exp) (compile-if exp target linkage))
-        ((lambda? exp) (compile-lambda exp target linkage compile-env))
+        ((if? exp)
+         (compile-if exp target linkage compile-env))
+        ((lambda? exp)
+         (compile-lambda exp target linkage compile-env))
         ((begin? exp)
          (compile-sequence (begin-actions exp) target linkage compile-env))
         ((cond? exp) (compile (cond->if exp) target linkage compile-env))
@@ -99,7 +101,7 @@
   ; <implementation about set value will be added here>
   (let ((var (assignment-variable exp))
         (get-value-code
-         (compile (assignment-value exp) 'val 'next)))
+         (compile (assignment-value exp) 'val 'next compile-env)))
     (end-with-linkage linkage
      (preserving '(env)
       get-value-code
@@ -115,7 +117,7 @@
   ; <implementation about extend compile-env will be added here>
   (let ((var (definition-variable exp))
         (get-value-code
-         (compile (definition-value exp) 'val 'next)))
+         (compile (definition-value exp) 'val 'next compile-env)))
     (end-with-linkage linkage
      (preserving '(env)
       get-value-code
@@ -157,7 +159,7 @@
       (compile (first-exp seq) target linkage compile-env)
       (preserving '(env continue)
        (compile (first-exp seq) target 'next compile-env)
-       (compile-sequence (rest-exps seq) target linkage) compile-env)))
+       (compile-sequence (rest-exps seq) target linkage compile-env))))
 
 ; complied procedure
 (define (make-compiled-procedure entry env)
