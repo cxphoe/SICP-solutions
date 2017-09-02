@@ -1,4 +1,4 @@
-(load "expression.rkt")
+(load "ev-operations\\expression.rkt")
 (load "compiler-instruction-sequence.rkt")
 (load "compiler-label.rkt")
 (load "compiler-lexical-address.rkt")
@@ -12,6 +12,7 @@
 ;    and change the implementation about open code
 ; >> adopt implementation of scan-out-defines
 ; >> adopt implementation of checking rebound open code operators
+; >> use expression.rkt from directory <ev-operations>
 
 (define (test text)
   (for-each (lambda (x)
