@@ -119,47 +119,6 @@
   (set-register-contents! fact-machine 'n n)
   (start fact-machine))
 
-
-; another test machine
-(define fib-machine
-  (make-machine
-   (list (list '= =) (list '- -) (list '+ +) (list '< <)
-         (list 'display display))
-   '(controller
-       (assign continue (label fib-done))
-     fib-loop
-       (test (op <) (reg n) (const 2))
-       (branch (label immediate-answer))
-       ;; set up to compute Fib(n-1)
-       (save continue)
-       (assign continue (label afterfib-n-1))
-       (save n)
-       (assign n (op -) (reg n) (const 1))
-       (goto (label fib-loop))
-     afterfib-n-1
-       (restore n)
-       (assign n (op -) (reg n) (const 2))
-       (assign continue (label afterfib-n-2))
-       (save val)
-       (goto (label fib-loop))
-     afterfib-n-2
-       (assign n (reg val))
-       (restore val)
-       (restore continue)
-       (assign val
-               (op +) (reg val) (reg n))
-       (goto (reg continue))
-     immediate-answer
-       (assign val (reg n))
-       (goto (reg continue))
-     fib-done
-       (perform (op display) (reg val))
-       (perform (op print-stack-statistics)))))
-
-(define (fib n)
-  (set-register-contents! fib-machine 'n n)
-  (start fib-machine))
-
 ; b)
 ; The compiled instructions is functioning good enough as we can see.
 ; I just can't come up with something better.
