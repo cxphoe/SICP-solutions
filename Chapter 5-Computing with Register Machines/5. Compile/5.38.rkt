@@ -1,59 +1,52 @@
-(load "compile-sequence.rkt")
+; SICP exercise 5.38
+;
+; implement open code for primitive procedure like '= '+ '- '*, to erase
+; the redundant code for checking primitives' procedure type.
 
-(define (over-write? op compile-env)
-  (eq? (find-variable op compile-env)
-       'not-found))
+(load "compiler-instruction-sequence.rkt")
 
-(define (open-code? exp compile-env)
+(define (open-code? exp)
   (and (pair? exp)
-       (memq (car exp) open-operator)
-       (over-write? (car exp) compile-env)))
+       (memq (car exp) open-operators)))
 
-(define open-operator '(= - + *))
+(define open-operators '(= - + *))
 
-;; a)
-(define (spread-arguments operands compile-env)
-  (let ((arg1-code (compile (car operands) 'arg1 'next compile-env))
-        (arg2-code (compile (cadr operands) 'arg2 'next compile-env)))
-    (list arg1-code arg2-code)))
-         
-;; b)
-(define (compile-open-code op operands target linkage compile-env)
-  (cond ((eq? op '=)
-         (general-compile '= operands target linkage compile-env))
-        ((eq? op '-)
-         (general-compile '- operands target linkage compile-env))
-        ((eq? op '+)
-         (general-compile '+
-                          (construct-operands '+ operands)
-                          target linkage compile-env))
-        ((eq? op '*)
-         (general-compile '*
-                          (construct-operands '* operands)
-                          target linkage compile-env))))
-
-(define (general-compile op operands target linkage compile-env)
-  (let ((operand-codes (spread-arguments operands compile-env)))
+; a)
+; I didn't do exactly what are asked by the exercise. During implementation
+; I just found out that creating a generic compile is more elegant.
+(define (general-compile op operands target linkage)
+  (let ((arg1-code (compile (car operands) 'arg1 'next))
+        (arg2-code (compile (cadr operands) 'arg2 'next)))
     (end-with-linkage
      linkage
      (preserving '(env)
-                 (car operand-codes)
-                 (preserving '(arg1)
-                             (cadr operand-codes)
-                             (make-instruction-sequence
-                              '(arg1 arg2)
-                              (list target)
-                              (list (list 'assign
-                                          target
-                                          (list 'op op)
-                                          '(reg arg1)
-                                          '(reg arg2)))))))))
+      arg1-code
+      (preserving '(arg1)
+       arg2-code
+       (make-instruction-sequence
+        '(arg1 arg2) (list target)
+        `((assign ,target (op ,op) (reg arg1) (reg arg2)))))))))
 
+; b)
+; detect the operator of procedure 
+(define (compile-open-code exp target linkage)
+  (let ((op (operator exp)) (args (operands exp)))
+    (cond ((eq? op '=)
+           (general-compile '= args target linkage))
+           ((eq? op '-)
+            (general-compile '- args target linkage))
+           ((eq? op '+)
+            (general-compile '+ (construct-operands '+ args)
+                             target linkage))
+           ((eq? op '*)
+            (general-compile '* (construct-operands '* args)
+                             target linkage)))))
+
+; d)
+; construct (+ 1 2 3 4 5) like: ((+ (+ (+ 1 2) 3) 4) 5)
 (define (construct-operands op operands)
   (if (= 2 (length operands))
       operands
       (construct-operands op
-                          (cons (list op
-                                      (car operands)
-                                      (cadr operands))
-                                (cddr operands)))))
+       (cons (list op (car operands) (cadr operands))
+             (cddr operands)))))
