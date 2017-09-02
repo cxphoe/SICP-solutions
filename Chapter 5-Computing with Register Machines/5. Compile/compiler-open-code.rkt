@@ -1,8 +1,17 @@
 ; Implementation about open code in ex-5.28 with parameter compile-env
 
-(define (open-code? exp)
+; log:
+; >> open code implementation with compile-env
+; >> change the predicate open-code? to detect rebound operator
+
+(define (open-code? exp compile-env)
   (and (pair? exp)
-       (memq (car exp) open-operators)))
+       (memq (car exp) open-operators)
+       (not (rebound? (car exp) compile-env))))
+
+(define (rebound? op compile-env)
+  (not (eq? (find-variable op compile-env)
+            'not-found)))
 
 (define open-operators '(= - + *))
 

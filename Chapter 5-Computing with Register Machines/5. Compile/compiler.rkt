@@ -11,6 +11,7 @@
 ; >> adopt implementation about lexical address in ex-5.39 ~ ex-5.44
 ;    and change the implementation about open code
 ; >> adopt implementation of scan-out-defines
+; >> adopt implementation of checking rebound open code operators
 
 (define (test text)
   (for-each (lambda (x)
@@ -23,7 +24,7 @@
 (define (compile exp target linkage compile-env)   ; changed
   (cond ((self-evaluating? exp)
          (compile-self-evaluating exp target linkage))
-        ((open-code? exp)
+        ((open-code? exp compile-env)
          (compile-open-code exp target linkage compile-env))
         ((quoted? exp) (compile-quoted exp target linkage))
         ((variable? exp)
