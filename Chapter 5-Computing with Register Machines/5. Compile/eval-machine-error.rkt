@@ -1,16 +1,33 @@
 ; eval-machine with error-handling system
 
+; log:
+; >> original from section 4 with error-handling system
+; >> set up operations for compiler and add compiling function
+
 (load "ev-operations-error/check-primitive.rkt")
 (load "ev-operations-error/expression.rkt")
 (load "ev-operations-error/environment.rkt")
 (load "ev-operations-error/loop-setup.rkt")
 (load "ev-operations-error/ev-operations.rkt")
-(load "machine-model.rkt")
+(load "machine/machine-model.rkt")
+(load "machine/assembler.rkt")
+
+(load "compiler.rkt")
+(set! eceval-operations
+      (append `((make-compiled-procedure ,make-compiled-procedure)
+                (compiled-procedure? ,compiled-procedure?)
+                (compiled-procedure-entry ,compiled-procedure-entry)
+                (compiled-procedure-env ,compiled-procedure-env)
+                (lexical-address-lookup ,lexical-address-lookup)
+                (lexical-address-set! ,lexical-address-set!)
+                )
+              eceval-operations))
 
 (define eval-machine
   (make-machine
    eceval-operations
-   '(read-eval-print-loop
+   '(  (branch (label external-entry))   ; branches if falg is set
+     read-eval-print-loop
        (perform (op initialize-stack))
        (perform
         (op prompt-for-input) (const ";;; EC-Eval input:"))
@@ -18,8 +35,13 @@
        (assign env (op get-global-environment))
        (assign continue (label print-result))
        (goto (label eval-dispatch))
+     external-entry
+       (perform (op initialize-stack))
+       (assign env (op get-global-environment))
+       (assign continue (label print-result))
+       (goto (reg val))
      print-result
-       ;(perform (op print-stack-statistics))
+       (perform (op print-stack-statistics))
        (perform
         (op announce-output) (const ";;; EC-Eval value:"))
        (perform (op user-print) (reg val))
@@ -118,6 +140,8 @@
        (branch (label primitive-apply))
        (test (op compound-procedure?) (reg proc))
        (branch (label compound-apply))
+       (test (op compiled-procedure?) (reg proc))
+       (branch (label compiled-apply))
        (goto (label unknown-procedure-type))
      primitive-apply
        (assign val (op apply-primitive-procedure)
@@ -136,6 +160,10 @@
        (branch (label arity-error))         ; when given arity don't equal the expected arity
        (assign unev (op procedure-body) (reg proc))
        (goto (label ev-sequence))
+     compiled-apply
+       (restore continue)
+       (assign val (op compiled-procedure-entry) (reg proc))
+       (goto (reg val))
        
      ev-begin
        (assign unev (op begin-actions) (reg exp))
@@ -280,8 +308,28 @@
 (define (show name)
   (display (get-register-contents eval-machine name)))
 
+; normal start for machine
+(define (start-eceval)
+  (set-register-contents! eval-machine 'flag false)
+  (start eval-machine))
+
+(define (compile-and-go expression)
+  (let ((instructions
+         (assemble (statements
+                    (compile expression 'val 'return '()))
+                   eval-machine)))
+    (set-register-contents! eval-machine 'val instructions)
+    (set-register-contents! eval-machine 'flag #t)
+    (start eval-machine)))
+
 ;(trace-on eval-machine)
-;(trace-register eval-machine 'exp)
+;(trace-register eval-machine 'val)
 ;(set-breakpoint eval-machine 'print-result 1)
 
-(start eval-machine)
+;(start eval-machine)
+
+(compile-and-go
+ '(define (factorial n)
+    (if (= n 1)
+        1
+        (* (factorial (- n 1)) n))))
