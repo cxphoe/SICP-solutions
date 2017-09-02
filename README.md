@@ -17,4 +17,8 @@ Files whose names are not preceded by numbers usually include:
 
 These two require C program language to implement. But I haven't finished the study of C yet.
 
+## log
+> 5.01 ~ 7.31 : finish almost all the exercises
+> 8.26 ~ 9.02 : add, complete or refine answers
+
 Any suggestion will be appreciated.
