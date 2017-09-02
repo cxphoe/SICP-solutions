@@ -4,6 +4,7 @@
 ; >> original from section 4 with error-handling system
 ; >> set up operations for compiler and add compiling function
 ; >> add register compapp for compound procedure call in compiled process
+; >> adopt implementation of compile-and-run
 
 (load "ev-operations-error/check-primitive.rkt")
 (load "ev-operations-error/expression.rkt")
@@ -12,6 +13,7 @@
 (load "ev-operations-error/ev-operations.rkt")
 (load "machine/machine-model.rkt")
 (load "machine/assembler.rkt")
+(load "5.48.rkt")
 
 (load "compiler.rkt")
 (set! eceval-operations
@@ -21,6 +23,9 @@
                 (compiled-procedure-env ,compiled-procedure-env)
                 (lexical-address-lookup ,lexical-address-lookup)
                 (lexical-address-set! ,lexical-address-set!)
+                (compile-run? ,compile-run?)
+                (compile-instructions ,compile-instructions)
+                (compile-text ,compile-text)
                 )
               eceval-operations))
 
@@ -53,6 +58,8 @@
        (branch (label ev-self-eval))
        (test (op error?) (reg exp))      ; add for user interface
        (branch (label ev-error))         ; can use (error <me> <source>)
+       (test (op compile-run?) (reg exp))
+       (branch (label ev-compile))
        (test (op variable?) (reg exp))
        (branch (label ev-variable))
        (test (op quoted?) (reg exp))
@@ -75,6 +82,16 @@
        (branch (label ev-application))
        (goto (label unknown-expression-type))
        
+     ev-compile
+       (save continue)
+       (assign exp (op compile-text) (reg exp))
+       (assign continue (label ev-compile-did-text))
+       (goto (label eval-dispatch))
+     ev-compile-did-text
+       (restore continue)
+       (assign val (op compile-instructions) (reg val))
+       (goto (reg val))
+     
      ev-self-eval
        (assign val (reg exp))
        (goto (reg continue))
@@ -330,6 +347,8 @@
 
 ;(start eval-machine)
 
-(compile-and-go
- '(define (f n)
-    (+ (g n) 2)))
+;(compile-and-go
+; '(define (f n)
+;    (+ (g n) 2)))
+
+;(start-eceval)
