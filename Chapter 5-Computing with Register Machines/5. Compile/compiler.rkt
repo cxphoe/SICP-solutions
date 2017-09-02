@@ -15,6 +15,8 @@
 ; >> use expression.rkt from directory <ev-operations>
 ; >> extend the compile-procedure-call to allow compiled code can
 ;    call interpreted procedure
+; >> fix a bug in compile-procedure-call that will create a out-of-order
+;    instruction sequences
 
 (define (test text)
   (for-each (lambda (x)
@@ -22,7 +24,7 @@
                   (begin (display "  ")))
               (display x)
               (newline))
-            (caddr (compile text 'val 'next '()))))
+            (caddr (compile text 'val 'return '()))))
 
 (define (compile exp target linkage compile-env)   ; changed
   (cond ((self-evaluating? exp)
@@ -292,12 +294,13 @@
          compiled-branch
          (compile-proc-appl target compiled-linkage))
         (parallel-instruction-sequences
+         (append-instruction-sequences                 ;
+          compound-branch                              ; compound branch
+          (compound-apply target compiled-linkage))    ;
          (append-instruction-sequences
           primitive-branch
           (primitive-apply target linkage))  ; I have extracted the primitive apply
-         (append-instruction-sequences                 ;
-          compound-branch                              ; compound branch
-          (compound-apply target compiled-linkage))))           ;
+         ))
        after-call))))
 
 (define all-regs '(env proc val argl continue))
