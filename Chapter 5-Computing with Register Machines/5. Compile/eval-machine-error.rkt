@@ -3,6 +3,7 @@
 ; log:
 ; >> original from section 4 with error-handling system
 ; >> set up operations for compiler and add compiling function
+; >> add register compapp for compound procedure call in compiled process
 
 (load "ev-operations-error/check-primitive.rkt")
 (load "ev-operations-error/expression.rkt")
@@ -26,7 +27,8 @@
 (define eval-machine
   (make-machine
    eceval-operations
-   '(  (branch (label external-entry))   ; branches if falg is set
+   '(  (assign compapp (label compound-apply))
+       (branch (label external-entry))   ; branches if falg is set
      read-eval-print-loop
        (perform (op initialize-stack))
        (perform
@@ -329,7 +331,5 @@
 ;(start eval-machine)
 
 (compile-and-go
- '(define (factorial n)
-    (if (= n 1)
-        1
-        (* (factorial (- n 1)) n))))
+ '(define (f n)
+    (+ (g n) 2)))
