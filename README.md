@@ -2,7 +2,7 @@
 > My own solutions for SICP.
 
 ## Editor
-The tool I used to code is DrRacket, which quite fits the scheme language in the book.
+The tool I used to code is [DrRacket](http://www.neilvandyke.org/racket/sicp/), which quite fits the scheme language in the book.
 
 ## BTW
 The solutions of some question may not be found in it, because I just have skipped them or I haven't figured it out. So, I will, maybe, update it someday.
@@ -18,7 +18,7 @@ Files whose names are not preceded by numbers usually include:
 These two require C program language to implement. But I haven't finished the study of C yet.
 
 ## log
-> 5.01 ~ 7.31 : finish almost all the exercises
-> 8.26 ~ 9.02 : add, complete or refine answers
+- 5.01 ~ 7.31 : finish almost all the exercises
+- 8.26 ~ 9.02 : add, complete or refine answers
 
 Any suggestion will be appreciated.
