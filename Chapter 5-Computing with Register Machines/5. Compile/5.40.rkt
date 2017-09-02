@@ -24,18 +24,6 @@
 ; The compelte code about compiler is below. But it still doesn't work
 ; because we haven't implement how to use the lexical address
 
-(load "expression.rkt")
-(load "compiler-instruction-sequence.rkt")
-(load "compiler-label.rkt")
-
-(define (test text)
-  (for-each (lambda (x)
-              (if (pair? x)
-                  (begin (display "  ")))
-              (display x)
-              (newline))
-            (caddr (compile text 'val 'next '()))))
-
 (define (compile exp target linkage compile-env)   ; changed
   (cond ((self-evaluating? exp)
          (compile-self-evaluating exp target linkage))
