@@ -22,12 +22,12 @@
          compiled-branch
          (compile-proc-appl target compiled-linkage))
         (parallel-instruction-sequences
-         (append-instruction-sequences
-          primitive-branch
-          (primitive-apply target linkage))  ; I have extracted the primitive apply
          (append-instruction-sequences                 ;
           compound-branch                              ; compound branch
-          (compound-apply target compiled-linkage))))           ;
+          (compound-apply target compiled-linkage))    ;
+         (append-instruction-sequences
+          primitive-branch
+          (primitive-apply target linkage)))) ; I have extracted the primitive apply
        after-call))))
 
 (define all-regs '(env proc val argl continue))
