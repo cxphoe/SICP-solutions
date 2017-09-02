@@ -1,6 +1,7 @@
 (load "expression.rkt")
 (load "compiler-instruction-sequence.rkt")
 (load "compiler-label.rkt")
+(load "5.38.rkt")  ; load open code implementation
 
 (define (test text)
   (for-each (lambda (x)
@@ -13,6 +14,8 @@
 (define (compile exp target linkage)
   (cond ((self-evaluating? exp)
          (compile-self-evaluating exp target linkage))
+        ((open-code? exp)
+         (compile-open-code exp target linkage))
         ((quoted? exp) (compile-quoted exp target linkage))
         ((variable? exp)
          (compile-variable exp target linkage))
