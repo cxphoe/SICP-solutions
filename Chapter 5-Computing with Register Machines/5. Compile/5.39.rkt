@@ -1,3 +1,8 @@
+; SICP exercise 5.39
+;
+; implement lexical address which can lookup binging-value without
+; checking variable
+
 (define (make-address frame-number offset)
   (list frame-number offset))
 
