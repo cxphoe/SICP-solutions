@@ -1,5 +1,7 @@
 # SICP-solutions
-> My own solutions for SICP.
+> solutions for SICP.
+
+<img src="http://mitpress.mit.edu/sites/default/files/sicp/graphics/main-banner.gif">
 
 ## Editor
 The tool I used to code is [DrRacket](http://www.neilvandyke.org/racket/sicp/), which quite fits the scheme language in the book.
